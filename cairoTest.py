@@ -1,4 +1,4 @@
-#!/usr/jgrey/anaconda/bin/pyhton
+#!/users/jgrey/anaconda/bin/python
 
 import math
 import cairo
