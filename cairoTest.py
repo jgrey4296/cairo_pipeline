@@ -1,10 +1,15 @@
 #!/users/jgrey/anaconda/bin/python
 
+import time
 import math
 import cairo
 
 #constants
 WIDTH, HEIGHT = 256, 256
+imgPath = "./imgs/"
+imgName = "initialTest"
+currentTime = time.gmtime()
+saveString = "%s%s_%s-%s-%s_%s-%s.png" % (imgPath, imgName, currentTime.tm_year, currentTime.tm_mon, currentTime.tm_mday, currentTime.tm_hour, currentTime.tm_min)
 
 #setup
 surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, WIDTH, HEIGHT)
@@ -37,4 +42,4 @@ ctx.stroke ()
 
 
 #write to file:
-surface.write_to_png ("imgs/example.png") # Output to PNG
+surface.write_to_png (saveString)
