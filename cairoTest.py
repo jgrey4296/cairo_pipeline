@@ -37,4 +37,4 @@ ctx.stroke ()
 
 
 #write to file:
-surface.write_to_png ("example.png") # Output to PNG
+surface.write_to_png ("imgs/example.png") # Output to PNG
