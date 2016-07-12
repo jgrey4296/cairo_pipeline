@@ -29,37 +29,6 @@ def draw(ctx,WIDTH,HEIGHT):
     
     drawRects(ctx,xysa)
 
-    
-    # for point in xysa:
-    #     rand = np.random.ranf(grains * 2) * 0.07 + 1
-    #     points = point[:2] * np.resize(rand,(grains,2))
-    #     repeatedSA = np.array([point[2:]]).repeat(grains,axis=0)
-    #     newXYSA = np.column_stack((points,repeatedSA))
-    #     drawRects(ctx,newXYSA)
-            
-    #drawGradient(ctx)
-    #ctx.translate (0.1, 0.1)
-    #drawShape(ctx)
-
-def drawGradient(ctx):
-    pat = cairo.LinearGradient (0.2, 0.5, 0.2, 0.15)
-    pat.add_color_stop_rgba(0.2,0,0,1,1)
-    pat.add_color_stop_rgba(0.5,0,1,0,0.2)
-    ctx.rectangle (0, 0, 1, 1) # Rectangle(x0, y0, x1, y1)
-    ctx.set_source (pat)
-    ctx.fill ()
-
-def drawShape(ctx):
-    ctx.move_to (0, 0)
-    ctx.arc (0.2, 0.1, 0.1, -math.pi/2, 0) # Arc(cx, cy, radius, start_angle, stop_angle)
-    ctx.line_to (0.5, 0.1) # Line to (x,y)
-    ctx.curve_to (0.5, 0.2, 0.5, 0.4, 0.2, 0.8) # Curve(x1, y1, x2, y2, x3, y3)
-    ctx.close_path ()
-    ctx.set_source_rgb (0.3, 0.2, 0.5) # Solid color
-    ctx.set_line_width (0.02)
-    ctx.stroke ()
-
-
 def clear_canvas(ctx):
     ctx.set_source_rgba(*BACKGROUND)
     ctx.rectangle(0,0,1,1)
