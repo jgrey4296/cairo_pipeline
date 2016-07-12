@@ -7,26 +7,16 @@ from numpy import cos
 from numpy import sin
 
 #constants:
-BACKGROUND = [1,1,1,1]
-FRONT = [1,0,1]
+BACKGROUND = [0,0,0,1]
+FRONT = [1,0,1,0.7]
 PIX = 1/1000
 R = 0.5
 grains = 10
 radiusRatio = 5
 
-def draw(ctx,WIDTH,HEIGHT):
-    global PIX
-    PIX = 0.002 #1./float(WIDTH)
-    
-    print('PIX %f' % PIX)
-
+def draw(ctx):
     clear_canvas(ctx)
-    ctx.set_source_rgba(*[0,0,0,1])
-    ctx.rectangle(0.005,0.005,0.99,0.99)
-    ctx.fill()
-
     xysa = genPoints()
-    
     drawRects(ctx,xysa)
 
 def clear_canvas(ctx):
@@ -37,7 +27,7 @@ def clear_canvas(ctx):
 def drawRects(ctx,xysa):
     #print('drawing',xys)
     for x,y,sx,sy,a in xysa:
-        ctx.set_source_rgba(*FRONT,a)
+        ctx.set_source_rgba(*FRONT)
         ctx.rectangle(x,y,sx,sy)
         ctx.fill()
 

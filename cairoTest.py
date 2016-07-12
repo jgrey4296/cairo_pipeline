@@ -6,19 +6,21 @@ import cairo
 import first
 
 #constants
-N = pow(2,12)
+N = 10
+X = pow(2,N)
+Y = pow(2,N)
 imgPath = "./imgs/"
 imgName = "initialTest"
 currentTime = time.gmtime()
 saveString = "%s%s_%s-%s-%s_%s-%s.png" % (imgPath, imgName, currentTime.tm_min, currentTime.tm_hour, currentTime.tm_mday, currentTime.tm_mon, currentTime.tm_year)
     
 #setup
-surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, N,N)
+surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, X,Y)
 ctx = cairo.Context(surface)
-ctx.scale(N,N)
+ctx.scale(X,Y)
     
 #Drawing:
-first.draw(ctx,N,N)
+first.draw(ctx)
     
 #write to file:
 surface.write_to_png (saveString)
