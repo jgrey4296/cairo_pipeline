@@ -6,7 +6,7 @@ import cairo
 import first
 
 #constants
-N = 10
+N = 12
 X = pow(2,N)
 Y = pow(2,N)
 imgPath = "./imgs/"
@@ -23,5 +23,6 @@ ctx.scale(X,Y)
 first.draw(ctx)
     
 #write to file:
+print('drawing')
 surface.write_to_png (saveString)
 

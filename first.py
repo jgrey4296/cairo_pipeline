@@ -1,55 +1,63 @@
 import math
 import cairo
+from cairo import OPERATOR_SOURCE
 import numpy as np
 from numpy import pi
 from numpy import linspace
 from numpy import cos
 from numpy import sin
+from numpy.random import random
+from scipy.interpolate import splprep
+from scipy.interpolate import splev
+import utils
+import IPython
+
+from ssClass import SandSpline
+from lineClass import LineSpline
 
 #constants:
-BACKGROUND = [0,0,0,1]
-FRONT = [1,0,1,0.7]
-PIX = 1/1000
-R = 0.5
-grains = 10
-radiusRatio = 5
+PIX = 1/pow(2,10)
+op = None
+sizeTuple = (3000,3000)
+numOfCircles = 10
+iterationNum = 30
+granulate = True
+interpolateGranules = False
+interpolate = True
+interpolateGrains = False
 
+#top level draw command:
 def draw(ctx):
-    clear_canvas(ctx)
-    xysa = genPoints()
-    drawRects(ctx,xysa)
+    global op
+    op = ctx.get_operator()
+    #ctx.set_operator(OPERATOR_SOURCE)
+    utils.clear_canvas(ctx)
+    init2(ctx)
+    init3(ctx)
 
-def clear_canvas(ctx):
-    ctx.set_source_rgba(*BACKGROUND)
-    ctx.rectangle(0,0,1,1)
-    ctx.fill()
+#------------------------------
 
-def drawRects(ctx,xysa):
-    #print('drawing',xys)
-    for x,y,sx,sy,a in xysa:
-        ctx.set_source_rgba(*FRONT)
-        ctx.rectangle(x,y,sx,sy)
-        ctx.fill()
+def init2(ctx):
+    ssInst = SandSpline(ctx,sizeTuple)
+    for i in range(numOfCircles):
+        print('adding circle:',i)
+        ssInst.addCircle()
 
-def genPoints():
-    amnt = 1000
-    r = 0.1
-    minScale = 1 - 1./radiusRatio
-    maxScale = 1 + 1./radiusRatio
-    source = np.random.ranf(amnt) * (2*pi)
-    xPos = cos(source) #shape : (1000,)
-    yPos = sin(source)
-    xy = np.column_stack((xPos,yPos)) #shape (1000,2)
-    scaleArray = np.linspace(minScale,maxScale,len(xy))
-    xy *= np.column_stack((scaleArray,scaleArray))*r
-    xy += 0.5
-    size = np.ones(amnt) * PIX
-    xys = np.column_stack((xy,size,size))
-    alpha = np.random.ranf(amnt)
-    xysa = np.column_stack((xys,alpha))
-    return xysa
-    
+    for i in range(iterationNum):
+        print('step:',i)
+        ssInst.step(granulate,interpolateGranules)
 
-        
+    ssInst.draw(interpolate,interpolateGrains)
 
+def init3(ctx):
+    lineInst = LineSpline(ctx,sizeTuple)
+    for i in range(numOfCircles):
+        print('adding line:',i)
+        line = [x for x in random(4)]
+        lineInst.addLine(*line)
 
+    for i in range(iterationNum):
+        print('step:',i,' of ',iterationNum)
+        lineInst.step(granulate,interpolateGranules)
+
+    lineInst.draw(interpolate,interpolateGrains)
