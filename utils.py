@@ -7,7 +7,7 @@ from scipy.interpolate import splev
 import IPython
 
 #constants:
-ALPHA = 0.04
+ALPHA = 0.1
 BACKGROUND = [0,0,0,1]
 FRONT = [0.8,0.1,0.71,ALPHA]
 TWOPI = 2 * pi
@@ -54,9 +54,11 @@ def getDirections(xys):
     dx = xysPrime[:,2] - xysPrime[:,0]
     dy = xysPrime[:,3] - xysPrime[:,1]
 
+    #radians:
     arc = np.arctan2(dy,dx)
     directions = np.column_stack([np.cos(arc),np.sin(arc)])
 
+    #hypotenuse
     dd = np.sqrt(np.square(dx)+np.square(dy))
     
     return (directions,dd)
@@ -69,7 +71,7 @@ def granulate(xys,grains=10,mult=2):
     directions,dd = getDirections(xys)
     granulated = None
     for i,d in enumerate(dd):
-        subGranules = xys[i,:] + (d + directions[i,:]*(np.random.random((grains,1))) * mult)
+        subGranules = xys[i,:] + (d * directions[i,:]*(np.random.random((grains,1))) * mult)
         if granulated is None:
             granulated = subGranules
         else:
@@ -87,3 +89,36 @@ def vary(xys,stepSize,pix):
     rndNoisePix = rndNoise * pix
     xysPrime = xys + rndNoisePix
     return xysPrime
+
+
+def sampleAlongLine(x,y,ex,ey,t):
+    o_x = (1 - t) * x + t * ex
+    o_y = (1 - t) * y + t * ey
+    return np.column_stack((o_x,o_y))
+
+def createLine(x,y,ex,ey,t):
+    lin = np.linspace(0,1,t)
+    line = sampleAlongLine(x,y,ex,ey,lin)
+
+    return line
+
+def bezier1cp(start,cp,end,t):
+    samplePoints = np.linspace(0,1,t)
+    line1 = createLine(*start,*cp,t)
+    line2 = createLine(*cp,*end,t)
+
+    out = sampleAlongLine(line1[:,0],line1[:,1],line2[:,0],line2[:,1],samplePoints)
+    return out
+
+def bezier2cp(start,cp1,cp2,end,t):
+    samplePoints = np.linspace(0,1,t)
+    line1 = createLine(*start,*cp1,t)
+    line2 = createLine(*cp1,*cp2,t)
+    line3 = createLine(*cp2,*end,t)
+
+    s2cp_interpolation = sampleAlongLine(line1[:,0],line1[:,1],line2[:,0],line2[:,1],samplePoints)
+    cp2e_interpolation = sampleAlongLine(line2[:,0],line2[:,1],line3[:,0],line3[:,1],samplePoints)
+    out = sampleAlongLine(s2cp_interpolation[:,0],s2cp_interpolation[:,1],cp2e_interpolation[:,0],cp2e_interpolation[:,1],samplePoints)
+    
+    return out
+        

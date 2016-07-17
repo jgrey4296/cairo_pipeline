@@ -9,12 +9,12 @@ sampleRange = [10,200]
 radiusRange = [0.2,0.25]
 interpolationPoints = 3000
 p_r = 0.001 #an individual point radius
-noiseAmnt = 0.4
-grains = 10
-grainMult = 1.5
-smooth = 0.0
+noiseAmnt = 0.1
+grains = 20
+grainMult = 1.3
+smooth = 0.00
 ALPHA = 0.05
-rMod = 0.8
+rMod = 1
 
 #replicating inconvergents sand spline
 class SandSpline(object):
@@ -106,7 +106,7 @@ class SandSpline(object):
             noise[:] += r * scale * self.noise_stp
 
             a = random(sampleSize)*TWOPI
-            rnd = np.column_stack((np.sin(a),np.sin(a)))
+            rnd = np.column_stack((np.cos(a),np.sin(a)))
 
             points = xyList[:,:]
             points += rnd * self.recRes * noise

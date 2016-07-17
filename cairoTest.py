@@ -12,7 +12,13 @@ Y = pow(2,N)
 imgPath = "./imgs/"
 imgName = "initialTest"
 currentTime = time.gmtime()
-saveString = "%s%s_%s-%s-%s_%s-%s.png" % (imgPath, imgName, currentTime.tm_min, currentTime.tm_hour, currentTime.tm_mday, currentTime.tm_mon, currentTime.tm_year)
+saveString = "%s%s_%s-%s-%s_%s-%s.png" % (imgPath,
+                                          imgName,
+                                          currentTime.tm_min,
+                                          currentTime.tm_hour,
+                                          currentTime.tm_mday,
+                                          currentTime.tm_mon,
+                                          currentTime.tm_year)
     
 #setup
 surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, X,Y)
@@ -23,6 +29,6 @@ ctx.scale(X,Y)
 first.draw(ctx)
     
 #write to file:
-print('drawing')
+print('Saving')
 surface.write_to_png (saveString)
 
