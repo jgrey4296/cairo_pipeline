@@ -1,0 +1,2 @@
+* Cairo Usage notes
+Install the richlewis package for python 3.5 on conda
