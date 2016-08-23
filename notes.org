@@ -1,2 +1,8 @@
 * Cairo Usage notes
 Install the richlewis package for python 3.5 on conda
+* Program Structures
+main -> draw_routines -> ssClass
+
+The Main draw class is ssClass (SandSpline)
+There is the __init__ method, and step methods,
+with specific draw methods for lines, circles etc
