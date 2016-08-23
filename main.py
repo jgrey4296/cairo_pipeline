@@ -34,7 +34,7 @@ ctx = cairo.Context(surface)
 ctx.scale(X,Y)
     
 #Drawing:
-draw_routines.draw(ctx,drawRoutineName)
+draw_routines.draw(ctx,drawRoutineName,X,Y)
     
 #write to file:
 print('Saving')

@@ -19,21 +19,20 @@ from ssClass import SandSpline
 PIX = 1/pow(2,10)
 op = None
 drawInstance = None
-sizeTuple = (2000,2000)
-numOfCircles = 10
-iterationNum = 20
+numOfElements = 10
+iterationNum = 10
 granulate = True
 interpolateGranules = False
 interpolate = True
 interpolateGrains = False
 
 #top level draw command:
-def draw(ctx, drawOption):
+def draw(ctx, drawOption,X_size,Y_size):
     print("Drawing: ",drawOption)
     global op
     global drawInstance
     op = ctx.get_operator()
-    drawInstance = SandSpline(ctx,sizeTuple)
+    drawInstance = SandSpline(ctx,(X_size,Y_size))
     #ctx.set_operator(OPERATOR_SOURCE)
     utils.clear_canvas(ctx)
 
@@ -46,6 +45,8 @@ def draw(ctx, drawOption):
         initSpecificLine()
     elif drawOption == "bezier":
         bezierTest()
+    elif drawOption == "manycircles":
+        manyCircles()
     else:
         raise Exception("Unrecognized draw routine",drawOption)
 
@@ -58,12 +59,12 @@ def draw(ctx, drawOption):
 #------------------------------
 
 def initCircles():
-    for i in range(numOfCircles):
+    for i in range(numOfElements):
         print('adding circle:',i)
         drawInstance.addCircle()
 
 def initLines():
-    for i in range(numOfCircles):
+    for i in range(numOfElements):
         print('adding line:',i)
         line = [x for x in random(4)]
         drawInstance.addLine(*line)
@@ -76,5 +77,13 @@ def bezierTest():
     cp = [0.4,0.6]
     cp2 = [0.8,0.1]
     end = [1.0,0.5]
-
     drawInstance.addBezier2cp(start,cp,cp2,end)
+
+def manyCircles():
+    xs = np.linspace(0.1,0.9,10)
+    ys = np.linspace(0.1,0.9,10)
+
+    for x in xs:
+        for y in ys:
+            drawInstance.addCircle(x,y,0.0002,0.0003)
+    
