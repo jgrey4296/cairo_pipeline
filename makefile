@@ -1,6 +1,12 @@
+#Default arg to build:
+ifndef ${draw}
+	draw := "circles"
+endif
+
 
 all :
-	./cairoTest.py
+	python ./main.py ${draw}
 
 clean :
 	rm imgs/*.png
+
