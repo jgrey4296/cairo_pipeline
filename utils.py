@@ -38,7 +38,7 @@ def clear_canvas(ctx):
     ctx.fill()
     ctx.set_source_rgba(*FRONT)
 
-
+#takes array of [[x1,y1]] to smooth
 def _interpolate(xy,num_points,smoothing=0.2):
     splineTuple,splineValues = splprep([xy[:,0],xy[:,1]],s=smoothing)
     interpolatePoints = np.linspace(0,1,num_points)

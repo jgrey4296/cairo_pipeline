@@ -107,6 +107,7 @@ class SandSpline(object):
         self.i_xys.append(interpolatedPoints)
         self.noise.append(initialNoise)
 
+        
     #------------------------------
     def draw(self,interpolate,interpolateGrains):
         print('drawing')
@@ -174,3 +175,4 @@ class SandSpline(object):
 
             
         
+    

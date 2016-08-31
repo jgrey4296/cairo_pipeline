@@ -14,11 +14,13 @@ import IPython
 
 #Drawing classes
 from ssClass import SandSpline
+from branches import Branches
 
 #constants:
 PIX = 1/pow(2,10)
 op = None
 drawInstance = None
+branchInstance = None
 numOfElements = 10
 iterationNum = 10
 granulate = True
@@ -26,31 +28,44 @@ interpolateGranules = False
 interpolate = True
 interpolateGrains = False
 
+branchIterations = 150
+
 #top level draw command:
 def draw(ctx, drawOption,X_size,Y_size):
     print("Drawing: ",drawOption)
     global op
     global drawInstance
+    global branchInstance
     op = ctx.get_operator()
+    #setup the draw instances
     drawInstance = SandSpline(ctx,(X_size,Y_size))
+    branchInstance = Branches(ctx,(X_size,Y_size))
     #ctx.set_operator(OPERATOR_SOURCE)
     utils.clear_canvas(ctx)
 
     #Initialise the base image:
     if drawOption == 'circles':
         initCircles()
+        iterateAndDraw()
     elif drawOption == "lines":
         initLines()
+        iterateAndDraw()
     elif drawOption == "singleLine":
         initSpecificLine()
+        iterateAndDraw()
     elif drawOption == "bezier":
         bezierTest()
+        iterateAndDraw()
     elif drawOption == "manycircles":
         manyCircles()
+        iterateAndDraw()
+    elif drawOption == "branch":
+        drawBranch(X_size,Y_size)
     else:
         raise Exception("Unrecognized draw routine",drawOption)
 
-    #step the drawing deformation:
+#step the drawing deformation:
+def iterateAndDraw():
     for i in range(iterationNum):
         print('step:',i)
         drawInstance.step(granulate,interpolateGranules)
@@ -87,3 +102,9 @@ def manyCircles():
         for y in ys:
             drawInstance.addCircle(x,y,0.0002,0.0003)
     
+def drawBranch(X_size,Y_size):
+    branchInstance.addBranch(0.5,0.5)
+    for i in np.arange(branchIterations):
+        print('Branch Growth:',i)
+        branchInstance.grow(i)
+    branchInstance.draw()
