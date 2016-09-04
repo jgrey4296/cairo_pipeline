@@ -28,7 +28,7 @@ interpolateGranules = False
 interpolate = True
 interpolateGrains = False
 
-branchIterations = 150
+branchIterations = 100
 
 #top level draw command:
 def draw(ctx, drawOption,X_size,Y_size):
@@ -103,7 +103,7 @@ def manyCircles():
             drawInstance.addCircle(x,y,0.0002,0.0003)
     
 def drawBranch(X_size,Y_size):
-    branchInstance.addBranch(0.5,0.5)
+    branchInstance.addBranch()
     for i in np.arange(branchIterations):
         print('Branch Growth:',i)
         branchInstance.grow(i)
