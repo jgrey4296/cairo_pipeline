@@ -15,12 +15,14 @@ import IPython
 #Drawing classes
 from ssClass import SandSpline
 from branches import Branches
+from voronoi import Voronoi
 
 #constants:
 PIX = 1/pow(2,10)
 op = None
 drawInstance = None
 branchInstance = None
+voronoiInstance = None
 numOfElements = 10
 iterationNum = 10
 granulate = True
@@ -30,16 +32,21 @@ interpolateGrains = False
 
 branchIterations = 100
 
+voronoi_nodes = 30
+
+
 #top level draw command:
 def draw(ctx, drawOption,X_size,Y_size):
     print("Drawing: ",drawOption)
     global op
     global drawInstance
     global branchInstance
+    global voronoiInstance
     op = ctx.get_operator()
     #setup the draw instances
     drawInstance = SandSpline(ctx,(X_size,Y_size))
     branchInstance = Branches(ctx,(X_size,Y_size))
+    voronoiInstance = Voronoi(ctx,(X_size,Y_size),voronoi_nodes)
     #ctx.set_operator(OPERATOR_SOURCE)
     utils.clear_canvas(ctx)
 
@@ -61,6 +68,8 @@ def draw(ctx, drawOption,X_size,Y_size):
         iterateAndDraw()
     elif drawOption == "branch":
         drawBranch(X_size,Y_size)
+    elif drawOption == "voronoi":
+        drawVoronoi(X_size,Y_size)
     else:
         raise Exception("Unrecognized draw routine",drawOption)
 
@@ -108,3 +117,8 @@ def drawBranch(X_size,Y_size):
         print('Branch Growth:',i)
         branchInstance.grow(i)
     branchInstance.draw()
+
+def drawVoronoi(X_size,Y_size):
+    voronoiInstance.initGraph()
+    voronoiInstance.calculate()
+    voronoiInstance.draw()

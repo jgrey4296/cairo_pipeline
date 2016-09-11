@@ -31,6 +31,43 @@ def drawCircle(ctx,x,y,r,fill=True):
     else:
         ctx.stroke()
 
+def drawDCEL(ctx,dcel):
+    ctx.set_source_rgba(0.2,0.2,0.9,1)
+    #draw the faces
+    draw_dcel_faces(ctx,dcel)
+    ctx.set_source_rgba(0.4,0.8,0.1,1)
+    #draw edges
+    draw_dcel_edges(ctx,dcel)
+    ctx.set_source_rgba(0.9,0.1,0.1,1)
+    #draw vertices
+    draw_dcel_vertices(ctx,dcel)
+    
+def draw_dcel_faces(ctx,dcel):
+    for f in dcel.faces:
+        ctx.new_path()
+        startEdge = f.outerComponent
+        ctx.move_to(startEdge.origin.x,startEdge.origin.y)
+        current = startEdge.next
+        while current is not startEdge:
+            ctx.line_to(current.origin.x,current.origin.y)
+            current = current.next
+        ctx.close_path()
+        ctx.fill()
+    
+def draw_dcel_edges(ctx,dcel):
+    ctx.set_line_width(0.002)
+    for e in dcel.halfEdges:
+        v1,v2 = e.getVertices()
+        ctx.move_to(v1.x,v1.y)
+        ctx.line_to(v2.x,v2.y)
+        ctx.stroke()
+        
+
+def draw_dcel_vertices(ctx,dcel):
+    """ Draw all the vertices in a dcel as dots """
+    for v in dcel.vertices:
+        drawCircle(ctx,v.x,v.y,0.01)
+        
 
 def clear_canvas(ctx):
     ctx.set_source_rgba(*BACKGROUND)

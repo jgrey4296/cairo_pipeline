@@ -1,13 +1,17 @@
 import numpy as np
 import numpy.random as random
 from math import pi, sin, cos
+import math
 import pyqtree
 import utils
 import IPython
+import heapq
 
 from Tree import Tree
 
-COLOUR = [0.2,0.1,0.6,0.5]
+import dcel
+
+COLOUR = [0.2,0.1,0.6,1.0]
 COLOUR_TWO = [1.0,0.2,0.4,0.5]
 
 
@@ -18,6 +22,8 @@ class Voronoi(object):
         self.sX = sizeTuple[0]
         self.sY = sizeTuple[1]
         self.nodeSize = num_of_nodes
+        self.nodes = None
+        
         #Nodes: Array of n horizontal and vertical lines
         self.graph = np.zeros((1,4))
         self.intersections = np.zeros((1,2))
@@ -31,7 +37,7 @@ class Voronoi(object):
             else:
                 self.graph = np.row_stack((self.graph,makeVerticalLine()))
 
-    def calculate(self):
+    def calculate_lines(self):
         tree = Tree(0.5)
         active = []
         #separate into events
@@ -60,8 +66,63 @@ class Voronoi(object):
                 for xy in crossPoints:
                     self.intersections = np.row_stack((self.intersections,xy))
 
+
+    def calculate_voronoi(self):
+        p =  self.graph
+        nodes = [[y,x] for x,y in p]
+        heapq.heapify(nodes)
+        beach_line = Tree()
+
+        while len(nodes) > 0:
+            event = heapq.heappop(nodes)
+            if isSiteEvent(event):
+                handleSiteEvent(event)
+            else:
+                handleCircleEvent(event)
+        #update half edges to bbox
+        #traverse half edges
+
+    def calculate(self):
+        return None
+        
                     
     def draw(self):
+        self.drawTest()
+
+
+    def drawTest(self):
+        self.ctx.set_source_rgba(*COLOUR)
+        # p = [0.3,0.6]
+        # l = 0.9
+
+        # utils.drawCircle(self.ctx,p[0],p[1],0.005)
+        
+        # line = utils.createLine(0,l,1,l,1000)
+        # for x,y in line:
+        #     utils.drawCircle(self.ctx,x,y,0.002)
+
+        # par = makeParabola(p,l,np.linspace(0,1,1000))
+        # print(par)
+        # for x,y in par:
+        #     utils.drawCircle(self.ctx,x,y,0.002)
+
+        dc = dcel.DCEL()
+        v1 = dc.newVertex(0.2,0.2)
+        v2 = dc.newVertex(0.4,0.2)
+        v3 = dc.newVertex(0.5,0.6)
+        e1 = dc.newEdge(v1,v2)
+        e2 = dc.newEdge(v2,v3)
+        e3 = dc.newEdge(v3,v1)
+        f1 = dc.newFace()
+        
+        dc.linkEdgesTogether([e1,e2,e3])
+        dc.setFaceForEdgeLoop(f1,e1)
+        
+        utils.drawDCEL(self.ctx,dc)
+        
+            
+    
+    def draw_main(self):
         #DRAW LINES
         self.ctx.set_source_rgba(*COLOUR)
         for (x,y,x2,y2) in self.graph:
@@ -73,6 +134,7 @@ class Voronoi(object):
         self.ctx.set_source_rgba(*COLOUR_TWO)
         for (x,y) in self.intersections:
             utils.drawCircle(self.ctx,x,y,0.009)
+
 
 #--------------------
     def graphToEvents(self):
@@ -106,3 +168,28 @@ def makeVerticalLine():
         return np.array([x,y,x,y2])
     else:
         return np.array([x,y2,x,y])
+
+def makeParabola(focus,directrix,xs):
+    firstConst = 1 / (2 * ( focus[1] - directrix))
+    secondConst = (focus[1] + directrix) / 2
+    ys = firstConst * pow((xs - focus[0]),2) + secondConst
+    xys = np.column_stack((xs,ys))
+    return xys
+    
+
+    
+
+    
+    
+    
+#----------
+
+def isSiteEvent(e):
+    return True
+
+def handleSiteEvent(event):
+    return None
+
+
+def handleCircleEvent(event):
+    return None
