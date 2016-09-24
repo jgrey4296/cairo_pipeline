@@ -14,7 +14,7 @@ imgPath = "./imgs/"
 imgName = "initialTest"
 currentTime = time.gmtime()
 #format the name of the image to be saved thusly:
-saveString = "%s%s_%s-%s-%s_%s-%s.png" % (imgPath,
+saveString = "%s%s_%s-%s-%s_%s-%s" % (imgPath,
                                           imgName,
                                           currentTime.tm_min,
                                           currentTime.tm_hour,
@@ -34,9 +34,9 @@ ctx = cairo.Context(surface)
 ctx.scale(X,Y)
     
 #Drawing:
-draw_routines.draw(ctx,drawRoutineName,X,Y)
+draw_routines.draw(ctx,drawRoutineName,X,Y,surface=surface,filenamebase=saveString)
     
-#write to file:
-print('Saving')
-surface.write_to_png (saveString)
+# #write to file: - DEPRECATED: moved into draw routines
+# print('Saving')
+# surface.write_to_png (saveString)
 
