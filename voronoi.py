@@ -1,5 +1,7 @@
 import numpy as np
 import numpy.random as random
+from numpy.linalg import det
+import math
 from math import pi, sin, cos
 import math
 import pyqtree
@@ -7,189 +9,228 @@ import utils
 import IPython
 import heapq
 
-from Tree import Tree
+from Parabola import Parabola
+#from Tree import Tree
+from rbtree import RBTree
 
-import dcel
+from dcel import DCEL
 
+#COLOURS:
 COLOUR = [0.2,0.1,0.6,1.0]
 COLOUR_TWO = [1.0,0.2,0.4,0.5]
+SITE_COLOUR = [1,0,0,1]
+SITE_RADIUS = 0.002
+CIRCLE_COLOUR = [1,1,0,1]
+CIRCLE_RADIUS = 0.003
+BEACH_LINE_COLOUR = [0,1,0,1]
+BEACH_RADIUS = 0.002
+SWEEP_LINE_COLOUR = [0,0,1,1]
+LINE_WIDTH = 0.002
 
+#event enum:
+SITE = 0
+CIRCLE = 1
 
 class Voronoi(object):
-
-    def __init__(self,ctx,sizeTuple,num_of_nodes):
+    """ Creates a random selection of points, and step by step constructs
+        a voronoi diagram
+    """
+    def __init__(self,ctx,sizeTuple,num_of_nodes=10):
         self.ctx = ctx
         self.sX = sizeTuple[0]
         self.sY = sizeTuple[1]
         self.nodeSize = num_of_nodes
-        self.nodes = None
+        #Heap of tuples of site/circle events
+        #(y_coord, SITE , np.array(xy_coord)) || (y_c, CIRCLE, np.array(xy_c))
+        self.events = []
+        #backup of the original sites
+        self.sites = []
+        #backup of all circle events
+        self.circles = []
+        #The beach line
+        self.beachline = None
+        #The sweep line position
+        self.sweep_position = None
+        #The output voronoi diagram as a DCEL
+        self.dcel = None
+
+        #activated arcs:
+        self.activated_arcs = []
+
         
-        #Nodes: Array of n horizontal and vertical lines
-        self.graph = np.zeros((1,4))
-        self.intersections = np.zeros((1,2))
+    def initGraph(self,nodes=None):
+        """ Create a graph of initial random sites """
+        print("Initialising graph")
+        if nodes is None:
+            for n in range(self.nodeSize):
+                newSite = random.random(2)
+                siteDescription = (newSite[1],SITE,newSite)
+                heapq.heappush(self.events,siteDescription)
+                self.sites.append(newSite)
+        self.dcel = DCEL()
+        self.beachline = RBTree()
         
-    def initGraph(self):
-        #insert a bunch of horizontal or vertical lines
-        for x in range(self.nodeSize):
-            choice = random.choice(['h','v'])
-            if choice == 'h':
-                self.graph = np.row_stack((self.graph,makeHorizontalLine()))
-            else:
-                self.graph = np.row_stack((self.graph,makeVerticalLine()))
-
-    def calculate_lines(self):
-        tree = Tree(0.5)
-        active = []
-        #separate into events
-        events = self.graphToEvents()
-        
-        #go through each event:
-        for e in events:
-            if len(e) == 3:
-                if e[-1] not in active:
-                    ## if horizontal start - add to tree
-                    active.append(e[-1])
-                    tree.insert(e[1],data=e[-1])
-                else:
-                    ## if horizontal end - remove from tree
-                    active.remove(e[-1])
-                    v = tree.search(e[1])
-                    if v is not None:
-                        v.data = None
-                    #tree.delete(e[1])
-            elif len(e) == 4:
-                ## if vertical - get range then search, and store intersections
-                r = tree.getRange(e[1],e[2])
-                #todo: mark intersections
-                line_indices = [x.data for x in r if x.data is not None]
-                crossPoints = [(e[0],d.value) for d in r if d.data is not None]
-                for xy in crossPoints:
-                    self.intersections = np.row_stack((self.intersections,xy))
-
-
-    def calculate_voronoi(self):
-        p =  self.graph
-        nodes = [[y,x] for x,y in p]
-        heapq.heapify(nodes)
-        beach_line = Tree()
-
-        while len(nodes) > 0:
-            event = heapq.heappop(nodes)
-            if isSiteEvent(event):
-                handleSiteEvent(event)
-            else:
-                handleCircleEvent(event)
-        #update half edges to bbox
-        #traverse half edges
-
     def calculate(self):
-        return None
-        
+        """ Calculate the next step of the voronoi diagram """
+        if len(self.events) == 0: #finished calculating
+            return False
+        print("Calculating step")
+        ##handle site / circle event
+        event = heapq.heappop(self.events)
+        #update the sweep position
+        self.sweep_position = event
+        #update the arcs:
+        self.update_arcs(self.sweep_position[0])
+        #handle the event:
+        if isSiteEvent(event):
+            self.handleSiteEvent(event)
+        elif isCircleEvent(event):
+            self.handleCircleEvent(event)
+        else:
+            raise Exception("Unrecognised Event")
+        return True 
+
+    def finalise_DCEL(self):
+        print("Finalising DCEL")
+        #take remaining points in tree, convert to bounded edges
+
+        #traverse DCEL to create faces
+
+        return self.dcel
+    
                     
-    def draw(self):
-        self.drawTest()
-
-
-    def drawTest(self):
+    def draw_voronoi_diagram(self):
+        """ Draw the final diagram """
+        print("Drawing final voronoi diagram")
+        utils.clear_canvas(self.ctx)
         self.ctx.set_source_rgba(*COLOUR)
-        # p = [0.3,0.6]
-        # l = 0.9
+        
+        #draw sites
+        for site in self.sites:
+            utils.drawCircle(self.ctx,*site,0.007)
+        
+        #draw faces
 
-        # utils.drawCircle(self.ctx,p[0],p[1],0.005)
-        
-        # line = utils.createLine(0,l,1,l,1000)
-        # for x,y in line:
-        #     utils.drawCircle(self.ctx,x,y,0.002)
+        #draw edge vertices
 
-        # par = makeParabola(p,l,np.linspace(0,1,1000))
-        # print(par)
-        # for x,y in par:
-        #     utils.drawCircle(self.ctx,x,y,0.002)
+    def update_arcs(self,d):
+        for arc in self.activated_arcs:
+            arc.update_d(d)
+        
+        
+    #UTILITY DRAW METHODS:
+    def draw_intermediate_states(self):
+        print("Drawing intermediate state")
+        utils.clear_canvas(self.ctx)
+        self.draw_sites()
+        self.draw_beach_line_components()
+        self.draw_sweep_line()
+        self.draw_circle_events()
+        
+    def draw_sites(self):
+        self.ctx.set_source_rgba(*SITE_COLOUR)
+        for site in self.sites:
+            utils.drawCircle(self.ctx,site[0],site[1],SITE_RADIUS)
 
-        dc = dcel.DCEL()
-        v1 = dc.newVertex(0.2,0.2)
-        v2 = dc.newVertex(0.4,0.2)
-        v3 = dc.newVertex(0.5,0.6)
-        e1 = dc.newEdge(v1,v2)
-        e2 = dc.newEdge(v2,v3)
-        e3 = dc.newEdge(v3,v1)
-        f1 = dc.newFace()
-        
-        dc.linkEdgesTogether([e1,e2,e3])
-        dc.setFaceForEdgeLoop(f1,e1)
-        
-        utils.drawDCEL(self.ctx,dc)
-        
+    def draw_circle_events(self):
+        self.ctx.set_source_rgba(*CIRCLE_COLOUR)
+        for event in self.circles:        
+            utils.drawCircle(self.ctx,site[0],site[1],CIRCLE_RADIUS)
             
+    def draw_beach_line_components(self):
+        self.ctx.set_source_rgba(*BEACH_LINE_COLOUR)
+        xs = np.linspace(0,1,2000)
+        for arc in self.activated_arcs:
+            xys = arc(xs)
+            for x,y in xys:
+                utils.drawCircle(self.ctx,x,y,BEACH_RADIUS)
+        
+
+    def draw_sweep_line(self):
+        if self.sweep_position is None:
+            return        
+        self.ctx.set_source_rgba(*SWEEP_LINE_COLOUR)
+        self.ctx.set_line_width(LINE_WIDTH)
+        #a tuple
+        sweep_event = self.sweep_position
+        self.ctx.move_to(0.0,sweep_event[2][1])
+        self.ctx.line_to(1.0,sweep_event[2][1])
+        self.ctx.close_path()
+        self.ctx.stroke()
+
+
+    #FORTUNE METHODS
+    def handleSiteEvent(self,event):
+        #for visualisation: add an arc
+        new_parabola = Parabola(event[2][0],event[2][1],self.sweep_position[0])
+        self.activated_arcs.append(new_parabola)
+        #if beachline is empty: add and return
+        if self.beachline.isEmpty():
+            new_beach_node = BeachLineNode(new_parabola)
+            self.beachline.insert(new_parabola)
+            return
+                
+        #get the x position of the event
+        xPos = event[2][0]
+        #search for the breakpoint interval of the beachline
+        #closest_arc = self.beachline.nearest_node(xPos)
+        
+        #remove false alarm breakpoints
+                
+        #split the beachline
+
+        #create half edges
+
+        #check for a circle event / insert a circle event
+
+        
+        return None
+
+    def handleCircleEvent(self,event):
+        #remove disappearing arc from tree
+        #update breakpoints
+        #add the centre of the circle as a vertex to DCEL
+        #recheck for new circle events
+        return None
     
-    def draw_main(self):
-        #DRAW LINES
-        self.ctx.set_source_rgba(*COLOUR)
-        for (x,y,x2,y2) in self.graph:
-            line = utils.createLine(x,y,x2,y2,1000)
-            for x,y in line:
-                utils.drawCircle(self.ctx,x,y,0.002)
-
-        #DRAW INTERSECTIONS:
-        self.ctx.set_source_rgba(*COLOUR_TWO)
-        for (x,y) in self.intersections:
-            utils.drawCircle(self.ctx,x,y,0.009)
-
-
+    
 #--------------------
-    def graphToEvents(self):
-        #return lines turned into events
-        events = []
-        for i,(x,y,x2,y2) in enumerate(self.graph):
-            if x == x2: #vertical
-                events.append((x,y,y2,i))
-            elif y == y2: #horizontal
-                events.append((x,y,i))
-                events.append((x2,y,i))
-        return sorted(events)
-
-#--------------------
-
-def makeHorizontalLine():
-    x = random.random()
-    x2 = random.random()
-    y = random.random()
-    if x < x2:    
-        return np.array([x,y,x2,y])
-    else:
-        return np.array([x2,y,x,y])
-
-
-def makeVerticalLine():
-    x = random.random()
-    y = random.random()
-    y2 = random.random()
-    if y < y2:
-        return np.array([x,y,x,y2])
-    else:
-        return np.array([x,y2,x,y])
-
-def makeParabola(focus,directrix,xs):
-    firstConst = 1 / (2 * ( focus[1] - directrix))
-    secondConst = (focus[1] + directrix) / 2
-    ys = firstConst * pow((xs - focus[0]),2) + secondConst
-    xys = np.column_stack((xs,ys))
-    return xys
-    
-
-    
-
-    
-    
-    
-#----------
+#Utilities:
 
 def isSiteEvent(e):
-    return True
+    """ Test an event from the pqueue for site/circle type """
+    return e[1] == SITE
 
-def handleSiteEvent(event):
-    return None
+def isCircleEvent(e):
+    return not isSiteEvent(e)
 
+#----------
+#The node to store in the balanced tree:
+class BeachLineNode(object):
 
-def handleCircleEvent(event):
-    return None
+    def __init__(self,arc,arc2=None):
+        #the 1 or 2 arcs that make up the node
+        #1 if a leaf, 2 if an interior node
+        self.left_arc = arc
+        self.right_arc = arc2
+        #the circle events that are related to the node
+        self.circle_events = []
+
+    def update_arcs(self,d):
+        if self.left_arc:
+            self.left_arc.update_d(d)
+        if self.right_arc:
+            self.right_arc.update(d)
+        
+    def compare(self,xPos,favourLeft=True,new_d=None):
+        """
+        Given a position, calculate the intersection points of the arcs,
+        favouring the (!)left breakpoint if there are two
+        returns  -1 | 1 for left | right child to explore
+        return 0 for no intersection
+        if given a new_d, runs a directrix update on the arcs
+        """
+        if new_d:
+            self.update_arcs(new_d)
+            
+        return -1
