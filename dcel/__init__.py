@@ -1,3 +1,5 @@
+from math import atan2
+
 # An implementation of a Double-Edge Connected List
 # from de Berg's Computational Geometry Book
 # Intended for use with cairo
@@ -104,4 +106,21 @@ class DCEL(object):
                 face.innerComponents.append(current)
 
             
-        
+    def orderVertices(self,focus,vertices):
+        """ Given a focus point and a list of vertices, sort them
+            by the counter-clockwise angle position they take relative """
+        relativePositions = [[x-focus[0],y-focus[1]] for x,y in vertices]        
+        angled = [(atan2(yp,xp),x,y) for xp,yp,x,y in zip(relativePositions,vertices)]
+        sortedAngled = sorted(angled)        
+        return sortedAngled
+
+    def inferEdges(self,face,vertices):
+        """ Given a face and a set of vertices belonging to face, 
+            sort the vertices CCW and connect together in that order """
+        return
+
+    def applyBBOX(self,bbox):
+        """ apply a bbox to any infinite edges """
+        return
+
+    
