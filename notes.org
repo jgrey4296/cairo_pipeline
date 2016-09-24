@@ -41,3 +41,12 @@ have minimum distances
 branches could be adapted later to produce fingerprints, growing radially instead of in straight lines?
 
 
+focus = (a,b)
+directrix = k
+wanting all (x,y)s
+
+1/ (2 * (b-k)) (x-a)^2 = y - ((b+k)/2)
+
+y = 1/(2*(b-k))(x-a)^2 + ((b+k)/2)
+
+(x-a)^2 = (x-a)(x-a) = x^2 - 2ax + a^2
