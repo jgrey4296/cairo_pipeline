@@ -21,7 +21,7 @@ def write_to_png(surface,filename,i=None):
         surface.write_to_png(filename+".png")
 
 def drawRect(ctx,x,y,sx,sy):
-    ctx.set_source_rgba(*FRONT)
+    #ctx.set_source_rgba(*FRONT)
     ctx.rectangle(x,y,sx,sy)
     ctx.fill()
 
