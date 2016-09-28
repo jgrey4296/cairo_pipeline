@@ -16,6 +16,7 @@ class Quadratic(object):
         return -result
 
     def intersect(self,q2):
+        """ Get the x coordinates of the intersections of the two quadratics """
         aprime = q2.a - self.a
         bprime = q2.b - self.b
         cprime = q2.c - self.c
@@ -30,11 +31,12 @@ class Quadratic(object):
         return pow(self.b,2) - (4 * self.a * self.c)
 
     def solve(self):
+        returnVal = None
         D = self.discriminant()
         numerator_a = -self.b
         denominator = 2 * self.a
         if D < 0:
-            return [None,None]
+            returnVal = [None,None]
         elif D == 0 or self.a == 0:
             print('Only one intersection')
             #using mullers method:
@@ -46,11 +48,12 @@ class Quadratic(object):
                 x = twoc / pos
             else:
                 x = twoc / neg
-            return [x,None]
+            returnVal = [x,None]
         else:
             z = sqrt(D)
-            return [
+            returnVal = [
                 (numerator_a + z) / denominator,
                 (numerator_a - z) / denominator,
             ]
+        return returnVal
         
