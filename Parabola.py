@@ -30,7 +30,12 @@ class Parabola(object):
         self.sb = 2 * self.sa * self.vh
         self.sc = self.sa * (pow(self.vh,2)) + self.vk
 
-
+    def __str__(self):
+        return "y = {0:.2f} * x^2 + {1:.2f} x + {2:.2f}".format(self.sa,self.sb,self.sc)
+        
+    def is_left_of_focus(self,x):
+        return x < self.fx
+        
     def update_d(self,d):
         """ Update the parabola given the directrix has moved """
         self.d = d
@@ -48,10 +53,13 @@ class Parabola(object):
         self.sb = 2 * self.sa * self.vh
         self.sc = self.sa * (pow(self.vh,2)) + self.vk
         
-    def intersect(self,p2):
+    def intersect(self,p2,d=None):
         """ Take the quadratic representations of parabolas, and
             get the 0, 1 or 2 points that are the intersections
         """
+        if d:
+            self.update_d(d)
+            p2.update_d(d)
         q1 = Q(self.sa,self.sb,self.sc)
         q2 = Q(p2.sa,p2.sb,p2.sc)
         xs = q1.intersect(q2)
@@ -98,3 +106,16 @@ class Parabola(object):
             return np.column_stack((xs,ys))            
         else:
             return np.column_stack((x,self.calcStandardForm(x)))
+
+    def __eq__(self,parabola2):
+        if self.fx == parabola2.fx \
+           and self.fy == parabola2.fy \
+           and self.va == parabola2.va \
+           and self.vh == parabola2.vh \
+           and self.vk == parabola2.vk \
+           and self.sa == parabola2.sa \
+           and self.sb == parabola2.sb \
+           and self.sc == parabola2.sc:
+            return True
+        else:
+            return False
