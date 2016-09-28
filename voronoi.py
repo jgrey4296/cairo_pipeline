@@ -10,8 +10,7 @@ import IPython
 import heapq
 
 from Parabola import Parabola
-#from Tree import Tree
-from rbtree import RBTree
+from beachline import BeachLine
 
 from dcel import DCEL
 
@@ -22,7 +21,7 @@ SITE_COLOUR = [1,0,0,1]
 SITE_RADIUS = 0.002
 CIRCLE_COLOUR = [1,1,0,1]
 CIRCLE_RADIUS = 0.003
-BEACH_LINE_COLOUR = [0,1,0,1]
+BEACH_LINE_COLOUR = [0,1,0]
 BEACH_RADIUS = 0.002
 SWEEP_LINE_COLOUR = [0,0,1,1]
 LINE_WIDTH = 0.002
@@ -30,6 +29,7 @@ LINE_WIDTH = 0.002
 #event enum:
 SITE = 0
 CIRCLE = 1
+
 
 class Voronoi(object):
     """ Creates a random selection of points, and step by step constructs
@@ -68,7 +68,8 @@ class Voronoi(object):
                 heapq.heappush(self.events,siteDescription)
                 self.sites.append(newSite)
         self.dcel = DCEL()
-        self.beachline = RBTree()
+        #Create beachline with comparison function
+        self.beachline = BeachLine()
         
     def calculate(self):
         """ Calculate the next step of the voronoi diagram """
@@ -138,14 +139,46 @@ class Voronoi(object):
             utils.drawCircle(self.ctx,site[0],site[1],CIRCLE_RADIUS)
             
     def draw_beach_line_components(self):
-        self.ctx.set_source_rgba(*BEACH_LINE_COLOUR)
-        xs = np.linspace(0,1,2000)
-        for arc in self.activated_arcs:
-            xys = arc(xs)
-            for x,y in xys:
-                utils.drawCircle(self.ctx,x,y,BEACH_RADIUS)
-        
+        #the arcs themselves
+        # self.ctx.set_source_rgba(*BEACH_LINE_COLOUR,0.5)
+        # xs = np.linspace(0,1,2000)
+        # for arc in self.activated_arcs:
+        #     xys = arc(xs)
+        #     for x,y in xys:
+        #         utils.drawCircle(self.ctx,x,y,BEACH_RADIUS)
 
+        #the frontier:
+        self.ctx.set_source_rgba(*BEACH_LINE_COLOUR,1)
+        leftmost_x = 0.0
+        ##Get the chain of arcs:
+        chain = self.beachline.get_chain()
+        if 1 < len(chain):
+            enumerated = list(enumerate(chain))
+            pairs = zip(enumerated[0:-1],enumerated[1:])
+            for (i,a),(j,b) in pairs:
+                intersections = a.intersect(b,self.sweep_position[0])
+                if len(intersections) == 0:
+                    print("NO INTERSECTION: {} - {}".format(i,j))
+                    continue
+                    #raise Exception("No intersection point")
+                left_most_intersection = intersections.min()
+                print("Arc {} from {} to {}".format(i,leftmost_x,left_most_intersection))
+                xs = np.linspace(leftmost_x,left_most_intersection,2000)
+                leftmost_x = left_most_intersection
+                frontier_arc = a(xs)
+                
+                for x,y in frontier_arc:
+                    utils.drawCircle(self.ctx,x,y,BEACH_RADIUS)
+
+        if 0 < len(chain):
+            #draw the last arc:
+            print("Final Arc from {} to {}".format(leftmost_x,"1.0"))
+            xs = np.linspace(leftmost_x,1.0,2000)
+            frontier_arc = chain[-1](xs)
+            for x,y in frontier_arc:
+                utils.drawCircle(self.ctx,x,y,BEACH_RADIUS)
+
+            
     def draw_sweep_line(self):
         if self.sweep_position is None:
             return        
@@ -162,23 +195,24 @@ class Voronoi(object):
     #FORTUNE METHODS
     def handleSiteEvent(self,event):
         #for visualisation: add an arc
-        new_parabola = Parabola(event[2][0],event[2][1],self.sweep_position[0])
-        self.activated_arcs.append(new_parabola)
+        new_arc = Parabola(event[2][0],event[2][1],self.sweep_position[0])
+        self.activated_arcs.append(new_arc)
         #if beachline is empty: add and return
         if self.beachline.isEmpty():
-            new_beach_node = BeachLineNode(new_parabola)
-            self.beachline.insert(new_parabola)
+            self.beachline.insert_root(new_arc)
             return
                 
         #get the x position of the event
-        xPos = event[2][0]
+        xPos = new_arc.fx
         #search for the breakpoint interval of the beachline
-        #closest_arc = self.beachline.nearest_node(xPos)
+        closest_arc_node = self.beachline.search(xPos,self.sweep_position[0])
         
         #remove false alarm breakpoints
-                
+        
         #split the beachline
-
+        new_head = self.beachline.split(new_arc,closest_arc_node)
+        self.beachline.balance(new_head)
+        
         #create half edges
 
         #check for a circle event / insert a circle event
@@ -204,33 +238,3 @@ def isSiteEvent(e):
 def isCircleEvent(e):
     return not isSiteEvent(e)
 
-#----------
-#The node to store in the balanced tree:
-class BeachLineNode(object):
-
-    def __init__(self,arc,arc2=None):
-        #the 1 or 2 arcs that make up the node
-        #1 if a leaf, 2 if an interior node
-        self.left_arc = arc
-        self.right_arc = arc2
-        #the circle events that are related to the node
-        self.circle_events = []
-
-    def update_arcs(self,d):
-        if self.left_arc:
-            self.left_arc.update_d(d)
-        if self.right_arc:
-            self.right_arc.update(d)
-        
-    def compare(self,xPos,favourLeft=True,new_d=None):
-        """
-        Given a position, calculate the intersection points of the arcs,
-        favouring the (!)left breakpoint if there are two
-        returns  -1 | 1 for left | right child to explore
-        return 0 for no intersection
-        if given a new_d, runs a directrix update on the arcs
-        """
-        if new_d:
-            self.update_arcs(new_d)
-            
-        return -1
