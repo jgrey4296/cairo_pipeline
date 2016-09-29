@@ -46,8 +46,10 @@ class Quadratic(object):
             neg = self.b - sqrtb4ac
             if pos != 0:
                 x = twoc / pos
-            else:
+            elif neg != 0:
                 x = twoc / neg
+            else:
+                x = None
             returnVal = [x,None]
         else:
             z = sqrt(D)
