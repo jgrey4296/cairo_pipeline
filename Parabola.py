@@ -119,3 +119,6 @@ class Parabola(object):
             return True
         else:
             return False
+
+    def get_focus(self):
+        return np.array([[self.fx,self.fy]])
