@@ -11,27 +11,19 @@
 #Constants of colours
 RED = 0
 BLACK = 1
-#SIDES
-LEFT = -1
-CENTRE = 0
-RIGHT = 1
-
 
 #Container
 class BeachLine(object):
 
-    def __init__(self,compare=None):
+    def __init__(self):
         """ Initialise the rb tree container, ie: the node list """
         self.nodes = []
+        self.arcs_added = []
         self.root = None
-        if compare is None:
-            self.compare = lambda x,y: x <= y
-        else:
-            self.compare = compare
 
-    def setComparisonFunction(self,comp):
-        """ pass in a lambda function to compare two nodes """
-        self.compare = comp
+    def update_arcs(self,d):
+        for arc in self.arcs_added:
+            arc.update_d(d)
         
     def isEmpty(self):
         if self.root is None:
@@ -40,6 +32,8 @@ class BeachLine(object):
         
     def insert_root(self,arc,data=None):
         self.root = Node((arc,arc))
+        self.balance(self.root)
+        self.arcs_added.append(arc)
 
     def delete_leaf(self,z):
         """ Delete a leaf, collapsing parents as necessary,  """
@@ -50,7 +44,6 @@ class BeachLine(object):
         #Base case: Root
         if node_parent is None and self.root == z:
             self.root = None
-            del z
             return
         #General Case:        
         #transplant the opposite side to the parent
@@ -86,11 +79,11 @@ class BeachLine(object):
         """ Delete a value from the tree """
         rbTreeDelete(self,node)
 
-    def search(self,x,d):
+    def search(self,x,d=None):
         """ Search the tree for a value, getting closest node to it """
         current = self.root
         while not current.isLeaf():
-            if compare_to_breakpoint(x,current,d):
+            if current.breakpointComparison(x,d=d):
                 current = current.left
             else:
                 current = current.right
@@ -106,6 +99,7 @@ class BeachLine(object):
 
     def split(self,arc,existingNode):
         """ splice an arc in the middle of a single existing arc """
+        self.arcs_added.append(arc)
         oldParent = existingNode.parent
         if oldParent is not None:
             if existingNode == oldParent.left:
@@ -116,7 +110,7 @@ class BeachLine(object):
         leaf1 = Node((existingNode.left_arc,existingNode.left_arc),side=LEFT)
         leaf2 = Node((arc,arc))
         leaf3 = Node((existingNode.left_arc,existingNode.left_arc),side=RIGHT)
-        parent1 = Node((leaf1.getMaxArc(),leaf2.getMinArc()))
+        parent1 = Node((leaf1.getMaxArc(),leaf2.getMinArc()),colour=existingNode.colour)
         parent2 = Node((leaf2.getMaxArc(),leaf1.getMinArc()))
         #Linking:
         parent1.add_left(leaf1)
@@ -132,21 +126,29 @@ class BeachLine(object):
             self.root = parent1
         #delete the exsiting node
         del existingNode
-        return parent1
+        #return the middle leaf
+        return leaf2
 
     def balance(self,node):
         rbtreeFixup(self,node)
+        #after fixing up colours, ensure integrity
+        #of inner node references
+        self.check_arcs(node)
 
     def get_chain(self):
         """ Get the arcs from leaves, left to right, as a list """
         if self.root is None:
             return []
         chain = []
+        if type(self.root) is not Node:
+            IPython.embed()
         current = self.root.getMin()
         while current is not None:
             if not current.isSingleArc():
                 raise Exception("Chain isnt dealing with only leaves")
-            chain.append(current.left_arc)
+            if not current.left_arc.vertical_line \
+               and (len(chain) == 0 or current.left_arc != chain[-1]):
+                chain.append(current.left_arc)
             current = current.getSuccessor()
         return chain
 
@@ -167,23 +169,44 @@ class BeachLine(object):
         else:
             return None
             
-    
+    def get_successor_triple(self,node):
+        a = node
+        b = a.getSuccessor()
+        if b:
+            c = b.getSuccessor()
+        if a and b and c:
+            return (a,b,c)
+        else:
+            return None
+
+    def get_predecessor_triple(self,node):
+        a = node
+        b = a.getPredecessor()
+        if b:
+            c = b.getPredecessor()
+        if a and b and c:
+            return (a,b,c)
+        else:
+            return None
+        
+        
 #--------------------
 #Internal node
 class Node(object):
     """ The internal node class for the rbtree.  """
     i = 0
     
-    def __init__(self,value,parent=None,data=None,side=CENTRE):
+    def __init__(self,value,parent=None,data=None,side=CENTRE,colour=RED):
         self.id = Node.i
         Node.i += 1
         #Node Data:
-        self.colour = RED
+        self.colour = colour
         if len(value) < 2:
             raise Exception("Node expected a tuple")
         self.left_arc = value[0]
         self.right_arc = value[1]
-        self.circle_events = []
+        self.left_circle_event = None
+        self.right_circle_event = None
         self.data = data
         self.side = side
         #Children:
@@ -196,7 +219,36 @@ class Node(object):
         #predecessor
         self.predecessor = None
 
-                
+    def breakpointComparison(self,x,d=None):
+        if self.isSingleArc():
+            return self.left_arc.is_left_of_focus(x)
+        if d:
+            self.update_arcs(d)
+        existing_intersect = self.left_arc.intersect(self.right_arc)
+        if len(existing_intersect) == 0:
+            raise Exception("No intersection")
+        elif len(existing_intersect) == 1:
+            return x < existing_intersect[0][0]
+        else:
+            return x < existing_intersect[:,0].min()
+
+
+    def countBlackHeight(self):
+    """ Given a node, count all paths and check they have the same black height """
+    stack = [self]
+    leaves = []
+    while len(stack) > 0:
+        current = stack.pop()
+        if current.isLeaf():
+            leaves.append(current)
+        else:
+            if current.left is not None:
+                stack.append(current.left)
+            if current.right is not None:
+                stack.append(current.right)
+
+    allHeights = [x.getBlackHeight(self) for x in leaves]
+    return allHeights
         
     def isSingleArc(self):
         return self.left_arc == self.right_arc
@@ -265,13 +317,17 @@ class Node(object):
                 
             if current.parent is not None:
                 current = current.parent
+            else:
+                return None
             if current.left is not None:
-                return current.left.getMax()
+                proposedPredecessor = current.left.getMax()
+                if proposedPredecessor != self:
+                    return current.left.getMax()
         return None
 
     def getSuccessor(self):
         """ Get the nearest leaf thats to the right of self  """
-        print("Getting successor of {}".format(self.id))
+        #print("Getting successor of {}".format(self.id))
         if self.right is not None:
             return self.right.getMin()
         else:
@@ -340,56 +396,38 @@ def rbtreeFixup(tree,node):
     """ Verify and fix the RB properties hold """
     while node.parent is not None and node.parent.colour == RED:
         parent = node.parent
-        parentParent = parent.parent
-        if parentParent is None:
+        grandParent = parent.parent
+        if grandParent is None:
             break
-        elif parent == parentParent.left:
-            y = parentParent.right
+        elif parent == grandParent.left:
+            y = grandParent.right
             if y is not None and y.colour == RED:
                 parent.colour = BLACK
                 y.colour = BLACK
-                parentParent.colour = RED
-                node = parentParent
+                grandParent.colour = RED
+                node = grandParent
             else:
                 if node == parent.right:
                     node = parent
                     rotateLeft(tree,node)
                 parent.colour = BLACK
-                parentParent.colour = RED
-                rotateRight(tree,parentParent)
+                grandParent.colour = RED
+                rotateRight(tree,grandParent)
         else:
-            y = parentParent.left
+            y = grandParent.left
             if y is not None and y.colour == RED:
                 parent.colour = BLACK
                 y.colour = BLACK
-                parentParent.colour = RED
-                node = parentParent
+                grandParent.colour = RED
+                node = grandParent
             else:
                 if node == parent.left:
                     node = parent
                     rotateRight(tree,node)
                 parent.colour = BLACK
-                parentParent.colour = RED
-                rotateLeft(tree,parentParent)
+                grandParent.colour = RED
+                rotateLeft(tree,grandParent)
     tree.root.colour = BLACK
-
-def countBlackHeight(node):
-    """ Given a node, count all paths and check they have the same black height """
-    stack = [node]
-    leaves = []
-    while len(stack) > 0:
-        current = stack.pop()
-        if current.left is None and current.right is None:
-            leaves.append(current)
-        else:
-            if current.left is not None:
-                stack.append(current.left)
-            if current.right is not None:
-                stack.append(current.right)
-
-    allHeights = [x.getBlackHeight(node) for x in leaves]
-    return allHeights
-
 
 def transplant(tree,u,v):
     """ Transplant the node v, and its subtree, in place of node u """
@@ -486,18 +524,5 @@ def rbDeleteFixup(tree,x):
             
             
 
-#----------
-def compare_to_breakpoint(xPos,node,directrix):
-    if node.isSingleArc():
-        return node.left_arc.is_left_of_focus(xPos)
-    
-    node.update_arcs(directrix)
-    existing_intersect = node.left_arc.intersect(node.right_arc)
-    if len(existing_intersect) == 0:
-        raise Exception("No intersection")
-    elif len(existing_intersect) == 1:
-        return xPos < existing_intersect[0][0]
-    else:
-        return xPos < existing_intersect[:,0].min()
         
 
