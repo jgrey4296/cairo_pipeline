@@ -13,6 +13,7 @@ ALPHA = 0.1
 BACKGROUND = [0,0,0,1]
 FRONT = [0.8,0.1,0.71,ALPHA]
 TWOPI = 2 * pi
+THREEFOURTHSTWOPI = 3/4 * TWOPI
 
 def write_to_png(surface,filename,i=None):
     if i:
@@ -219,6 +220,10 @@ def get_bisector(p1,p2,r=False):
     return nPrime
 
 def get_circle_3p(p1,p2,p3):
+    """
+    Given 3 points, treat them as defining two chords on a circle,
+    intersect them to find the centre, then calculate the radius
+    """
     arb_height = 200
     #mid points and norms:
     m1 = get_midpoint(p1,p2)
@@ -250,7 +255,7 @@ def get_circle_3p(p1,p2,p3):
     r3 = get_distance(p3,the_intersect[0])
 
     #a circle only if they are have the same radius
-    if r1 == r2 and r2 == r3:
+    if np.isclose(r1,r2) and np.isclose(r2,r3):
         return [the_intersect[0],r1]
     else:
         return None
@@ -348,23 +353,8 @@ def makeParabola(focus,directrix,xs):
     return xys
 
 
-class Parabola(object):
-    """ Quadratic Parabola of y = ax^2 + bx + c 
-    
-    """
-    def __init__(focus,directrix):
-        self.a = 1/(2* focus[1] - directrix)
-        self.b = 0 
-        self.c = (focus[1] + directrix) / 2
-        
-        self.directrix = directrix
-        self.focus_x = focus[0]
-        self.focus_y = focus[1]
-
-        
-    def __call__(self,x):
-        axsq = self.a * pow(x - self.focus_x,2)
-        bx = self.b * (x - self.focus_x)
-        return axsq + bx + self.c
-        
-                       
+def get_lowest_point_on_circle(centre,radius):
+    """ given a point and a radius, rotate round 3/4 of 2PI """
+    #return centre + np.array([np.cos(THREEFOURTHSTWOPI) * radius,
+    #                          np.sin(THREEFOURTHSTWOPI) * radius])
+    return centre + np.array([0,radius])
