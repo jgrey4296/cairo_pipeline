@@ -149,6 +149,8 @@ def drawVoronoi(X_size,Y_size):
         result = voronoiInstance.calculate()
         voronoiInstance.draw_intermediate_states()
         utils.write_to_png(cairo_surface,filename,i)
+        print("Drawn: {}".format(i))
+        #IPython.embed()
         if i > 150:
             #rough infinite loop guard
             raise Exception('Voronoi has run too long')
