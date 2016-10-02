@@ -37,7 +37,7 @@ class Quadratic(object):
         denominator = 2 * self.a
         if D < 0:
             returnVal = [None,None]
-        elif D == 0 or self.a == 0:
+        elif np.allclose(D,0) or np.allclose(self.a,0):
             print('Only one intersection')
             #using mullers method:
             twoc = - 2 * self.c
