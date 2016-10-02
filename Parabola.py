@@ -6,23 +6,24 @@ from Quadratic import Quadratic as Q
 class Parabola(object):
     #todo: if fy-d == 0: degenerate case, is a straight line
     #todo: let calculate take a current d line
-
+    id = 0
+    
     def __init__(self,fx,fy,d):
         """ Create a parabola with a focus x and y, and a directrix y """
         #breakout for degenerate case
-        self.vertical_line = False
+        self.id = Parabola.id
+        Parabola.id += 1
+        self.vertical_line = True
         self.fx = fx
         self.fy = fy
         self.d = d
         #focal parameter: the distance from vertex to focus/directrix
         self.p = 0.5 * (self.fy - self.d)
         #Vertex form: y = a(x-h)^2 + k
-        if self.fy - self.d == 0:
+        if np.allclose(self.fy,self.d):
             self.va = 0
-            self.vertical_line = True
         else:
             self.va = 1/(2*(self.fy-self.d))
-            self.vertical_line = False
         self.vh = -self.fx
         self.vk = self.fy - self.p
         #standard form: y = ax^2 + bx + c
@@ -41,7 +42,7 @@ class Parabola(object):
         self.d = d
         self.p = 0.5 * (self.fy - self.d)
         #Vertex form parameters:
-        if self.fy-self.d == 0:
+        if np.allclose(self.fy,self.d):
             self.va = 0
             self.vertical_line = True
         else:
@@ -60,6 +61,12 @@ class Parabola(object):
         if d:
             self.update_d(d)
             p2.update_d(d)
+        #degenerate cases:
+        if self.vertical_line:
+            return np.array([p2(self.fx)[0]])
+        if p2.vertical_line:
+            return np.array([self(p2.fx)[0]])
+        #normal:
         q1 = Q(self.sa,self.sb,self.sc)
         q2 = Q(p2.sa,p2.sb,p2.sc)
         xs = q1.intersect(q2)
@@ -107,18 +114,17 @@ class Parabola(object):
         else:
             return np.column_stack((x,self.calcStandardForm(x)))
 
+    def to_numpy_array(self):
+        return np.array([
+            self.fx, self.fy,
+            self.va, self.vh, self.vk,
+            self.sa,self.sb,self.sc            
+            ])
+        
     def __eq__(self,parabola2):
-        if self.fx == parabola2.fx \
-           and self.fy == parabola2.fy \
-           and self.va == parabola2.va \
-           and self.vh == parabola2.vh \
-           and self.vk == parabola2.vk \
-           and self.sa == parabola2.sa \
-           and self.sb == parabola2.sb \
-           and self.sc == parabola2.sc:
-            return True
-        else:
-            return False
+        a = self.to_numpy_array()
+        b = parabola2.to_numpy_array()
+        return np.allclose(a,b)
 
     def get_focus(self):
         return np.array([[self.fx,self.fy]])
