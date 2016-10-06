@@ -12,7 +12,7 @@ from scipy.interpolate import splev
 import utils
 import IPython
 import utils
-
+import logging
 #Drawing classes
 from ssClass import SandSpline
 from branches import Branches
@@ -44,7 +44,7 @@ voronoi_nodes = 10
 
 #top level draw command:
 def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render"):
-    print("Drawing: ",drawOption)
+    logging.info("Drawing: {}".format(drawOption))
     #modify and update globals:
     global op
     global drawInstance
@@ -95,7 +95,7 @@ def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render")
 #step the drawing deformation:
 def iterateAndDraw():
     for i in range(iterationNum):
-        print('step:',i)
+        logging.info('step:',i)
         drawInstance.step(granulate,interpolateGranules)
     
     drawInstance.draw(interpolate,interpolateGrains)
@@ -103,12 +103,12 @@ def iterateAndDraw():
 
 def initCircles():
     for i in range(numOfElements):
-        print('adding circle:',i)
+        logging.info('adding circle:',i)
         drawInstance.addCircle()
 
 def initLines():
     for i in range(numOfElements):
-        print('adding line:',i)
+        logging.info('adding line:',i)
         line = [x for x in random(4)]
         drawInstance.addLine(*line)
 
@@ -133,7 +133,7 @@ def manyCircles():
 def drawBranch(X_size,Y_size):
     branchInstance.addBranch()
     for i in np.arange(branchIterations):
-        print('Branch Growth:',i)
+        logging.info('Branch Growth:',i)
         branchInstance.grow(i)
     branchInstance.draw()
 
@@ -141,15 +141,28 @@ def drawVoronoi(X_size,Y_size):
     """ Step through the construction of a voronoi diagram """
     i = 0
     result = True
-    voronoiInstance.initGraph()
+    siteLocations = None
+    loaded = False
+    try:
+        siteLocations = voronoiInstance.load_graph()
+        loaded = True
+    except Exception as e:
+        logging.warn("Using Default Locations")
+    siteLocations = voronoiInstance.initGraph(data=siteLocations)
+    if not loaded:
+        voronoiInstance.save_graph(siteLocations)
     voronoiInstance.draw_intermediate_states()
     utils.write_to_png(cairo_surface,filename,i)
     while result:
         i += 1
-        result = voronoiInstance.calculate()
+        logging.info("\n---------- Calculating step {}".format(i))
+        logging.info(voronoiInstance.beachline)
+        result = voronoiInstance.calculate(i)
+        logging.info("----- Modifications:")
+        logging.info(voronoiInstance.beachline)
+
         voronoiInstance.draw_intermediate_states()
         utils.write_to_png(cairo_surface,filename,i)
-        print("Drawn: {}".format(i))
         #IPython.embed()
         if i > 150:
             #rough infinite loop guard

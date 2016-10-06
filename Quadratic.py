@@ -49,6 +49,7 @@ class Quadratic(object):
             elif neg != 0:
                 x = twoc / neg
             else:
+                print("Not even one intersection")
                 x = None
             returnVal = [x,None]
         else:
