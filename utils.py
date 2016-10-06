@@ -203,6 +203,8 @@ def get_distance(p1,p2):
 def get_normal(p1,p2):
     """ Get the normalized direction from two points """
     d = get_distance(p1,p2)
+    if np.allclose(d,0):
+        return np.array([0,0])
     n = (p1-p2)
     normalized = n / d
     return normalized
@@ -226,10 +228,10 @@ def get_circle_3p(p1,p2,p3):
     """
     arb_height = 200
     #mid points and norms:
-    m1 = get_midpoint(p1,p2)
-    n1 = get_bisector(p1,p2,r=True)
+    m1 = get_midpoint(p2,p1)
+    n1 = get_bisector(m1,p1,r=True)
     m2 = get_midpoint(p2,p3)        
-    n2 = get_bisector(p2,p3,r=True)
+    n2 = get_bisector(m2,p3,r=True)
     #extended norms:
     v1 = m1 + (1 * arb_height * n1)
     v2 = m2 + (1 * arb_height * n2)
@@ -358,3 +360,61 @@ def get_lowest_point_on_circle(centre,radius):
     #return centre + np.array([np.cos(THREEFOURTHSTWOPI) * radius,
     #                          np.sin(THREEFOURTHSTWOPI) * radius])
     return centre + np.array([0,radius])
+
+def sort_coords(arr):
+    ind = np.lexsort((arr[:,1],arr[:,0]))
+    return arr[ind]
+
+def inCircle(centre,radius,point):
+    d = get_distance(centre,point)
+    return d < radius
+
+def isClockwise(*args,cartesian=True):
+    #based on stackoverflow.
+    #sum over edges, if positive: CW. negative: CCW
+    #assumes normal cartesian of y bottom = 0
+    sum = 0
+    p1s = args
+    p2s = list(args[1:])
+    p2s.append(args[0])
+    pairs = zip(p1s,p2s)
+    for p1,p2 in pairs:
+        a = (p2[0,0]-p1[0,0]) * (p2[0,1]+p1[0,1])
+        sum += a
+    if cartesian:
+        return sum >= 0
+    else:
+        return sum < 0
+    
+def getMinRangePair(p1,p2):
+    d1 = get_distance(p1,p2)
+    fp2 = np.flipud(p2)
+    d2 = get_distance(p1,fp2)
+    d1_min = d1.min()
+    d2_min = d2.min()
+    if d1_min < d2_min:
+        i = d1.tolist().index(d1_min)
+        #get the right xs
+        return np.array([p1[i][0],p2[i][0]])        
+    else:
+        i = d2.tolist().index(d2_min)
+        return np.array([p1[i][0],fp2[i][0]])
+
+def getClosestToFocus(focus,possiblePoints):
+    ds = get_distance(focus,possiblePoints)
+    m_d = ds.min()
+    i = ds.tolist().index(m_d)
+    return possiblePoints[i]
+
+def get_closest_on_side(refPoint,possiblePoints,left=True):
+    subbed = possiblePoints - refPoint
+    if left:
+        onSide = subbed[:,0] < 0
+    else:
+        onSide = subbed[:,0] > 0
+    try:
+        i = onSide.tolist().index(True)
+        return possiblePoints[i]
+    except ValueError as e:
+        return None
+            
