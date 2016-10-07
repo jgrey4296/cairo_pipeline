@@ -122,6 +122,8 @@ class Parabola(object):
             ])
         
     def __eq__(self,parabola2):
+        if parabola2 is None:
+            return False
         a = self.to_numpy_array()
         b = parabola2.to_numpy_array()
         return np.allclose(a,b)
