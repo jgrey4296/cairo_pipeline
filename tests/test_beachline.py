@@ -1,6 +1,6 @@
 import unittest
 from beachlinecontext import beachline
-from beachline import BeachLine, Node, Centre, Left, Right
+from beachline import BeachLine, Node, Centre, Left, Right, NilNode
 import logging
 
 class BeachLineTests(unittest.TestCase):
@@ -16,7 +16,7 @@ class BeachLineTests(unittest.TestCase):
         """ Check initial creation """
         self.assertIsInstance(self.b,BeachLine)
         self.assertFalse(self.b.arc)
-        self.assertIsNone(self.b.root)
+        self.assertEqual(self.b.root,NilNode)
         self.assertEqual(len(self.b.nodes),0)
         self.assertEqual(len(self.b.arcs_added),0)
 
@@ -28,8 +28,8 @@ class BeachLineTests(unittest.TestCase):
     def test_minmax_on_empty_beachline(self):
         """ Check that min and max respond appropriately on an empty beachline """
         #todo: make these raise exceptions
-        self.assertIsNone(self.b.min())
-        self.assertIsNone(self.b.max())
+        self.assertEqual(self.b.min(),None)
+        self.assertEqual(self.b.max(),None)
 
 class TestNodeCreation(unittest.TestCase):
 
@@ -47,11 +47,11 @@ class TestNodeCreation(unittest.TestCase):
         self.assertEqual(self.node.value,self.value)
         self.assertIsNone(self.node.left_circle_event)
         self.assertIsNone(self.node.right_circle_event)
-        self.assertIsNone(self.node.left)
-        self.assertIsNone(self.node.right)
-        self.assertIsNone(self.node.parent)
-        self.assertIsNone(self.node.successor)
-        self.assertIsNone(self.node.predecessor)
+        self.assertEqual(self.node.left,NilNode)
+        self.assertEqual(self.node.right,NilNode)
+        self.assertEqual(self.node.parent,NilNode)
+        self.assertEqual(self.node.get_successor(),NilNode)
+        self.assertEqual(self.node.get_predecessor(),NilNode)
         self.assertEqual(str(self.node),str(self.value))
         self.assertFalse(self.node.arc)
         self.assertTrue(self.node.isLeaf())
@@ -118,8 +118,8 @@ class TrivialInsertBeachLineTestCase(unittest.TestCase):
     def test_empty_successor_and_predecessor(self):
         """ Check the successor/predecessor are empty in the trivial case """
         node,side = self.b.search(self.testvalue)
-        self.assertIsNone(node.predecessor)
-        self.assertIsNone(node.successor)
+        self.assertEqual(node.get_predecessor(),NilNode)
+        self.assertEqual(node.get_successor(),NilNode)
 
 
 class ExpandedInsertion_tests(unittest.TestCase):
@@ -142,12 +142,12 @@ class ExpandedInsertion_tests(unittest.TestCase):
         self.assertIsInstance(self.b.root.right,Node)
         self.assertFalse(self.b.root.isLeaf())
         self.assertTrue(self.b.root.right.isLeaf())
-        self.assertEqual(self.b.root.successor,self.b.root.right)
-        self.assertEqual(self.b.nodes[1],self.b.root.successor)
+        self.assertEqual(self.b.root.get_successor(),self.b.root.right)
+        self.assertEqual(self.b.nodes[1],self.b.root.get_successor())
         self.assertEqual(self.b.root.right.value,greaterValue)
         #check parentage
         self.assertEqual(self.b.root.right.parent,self.b.root)
-        self.assertEqual(self.b.root.right.predecessor,self.b.root)
+        self.assertEqual(self.b.root.right.get_predecessor(),self.b.root)
 
     def test_lesser_insert(self):
         lesserValue = self.original_test_value - 10
@@ -159,8 +159,8 @@ class ExpandedInsertion_tests(unittest.TestCase):
         self.assertIsInstance(self.b.root.left,Node)
         self.assertFalse(self.b.root.isLeaf())
         self.assertTrue(self.b.root.left.isLeaf())
-        self.assertEqual(self.b.root.predecessor,self.b.root.left)
-        self.assertEqual(self.b.root.left.successor,self.b.root)
+        self.assertEqual(self.b.root.get_predecessor(),self.b.root.left)
+        self.assertEqual(self.b.root.left.get_successor(),self.b.root)
         self.assertEqual(self.b.nodes[1],self.b.root.left)
         self.assertEqual(self.b.nodes[1].value,lesserValue)
         self.assertEqual(self.b.root.left.parent,self.b.root)
@@ -191,7 +191,7 @@ class SimpleBeachLine_Deletion_tests(unittest.TestCase):
         self.assertEqual(len(self.b.nodes),1)
         self.b.delete_value(value)
         self.assertEqual(len(self.b.nodes),0)
-        self.assertIsNone(self.b.root)
+        self.assertEqual(self.b.root,NilNode)
 
     def test_multi_insert_then_delete_leaf(self):
         value1 = 10
@@ -204,7 +204,7 @@ class SimpleBeachLine_Deletion_tests(unittest.TestCase):
         self.b.delete_value(value2)
 
         self.assertEqual(len(self.b.nodes),1)
-        self.assertIsNone(self.b.root.right)
+        self.assertEqual(self.b.root.right,NilNode)
 
     
 
