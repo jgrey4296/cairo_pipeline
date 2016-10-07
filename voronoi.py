@@ -12,7 +12,7 @@ import pickle
 from string import ascii_uppercase
 
 from Parabola import Parabola
-from beachline import BeachLine,Left,Right,Centre
+from beachline import BeachLine,Left,Right,Centre,NilNode
 
 from dcel import DCEL
 
@@ -286,7 +286,7 @@ class Voronoi(object):
         #search for the breakpoint interval of the beachline
         closest_arc_node,dir = self.beachline.search(xPos)
         
-        logging.info("Closest Arc Triple: {} *{}* {}".format(closest_arc_node.predecessor, closest_arc_node,closest_arc_node.successor))
+        logging.info("Closest Arc Triple: {} *{}* {}".format(closest_arc_node.get_predecessor(), closest_arc_node,closest_arc_node.get_successor()))
         logging.info("Direction: {}".format(dir))
         
         #remove false alarm circle events
@@ -331,7 +331,7 @@ class Voronoi(object):
                 #note: swapped this to add on the right ftm
                 self.add_circle_event(left_circle_loc,left_triple[1],left=False)
             else:
-                logging.warn("Left circle response: ", left_circle)
+                logging.warn("Left circle response: {}".format(left_circle))
 
         if right_triple:
             logging.info("Calc Right Triple: {}".format("-".join([str(x) for x in right_triple])))
@@ -351,15 +351,19 @@ class Voronoi(object):
         #remove disappearing arc from tree
         #and update breakpoints
         node = event.source
-        pre = node.predecessor
-        suc = node.successor
-        self.beachline.delete(node)
+        if node.left_circle_event:
+            self.delete_circle_event(node.left_circle_event)
+        if node.right_circle_event:
+            self.delete_circle_event(node.right_circle_event)
+        pre = node.get_predecessor()
+        suc = node.get_successor()
+        self.beachline.delete_node(node)
 
         logging.info("attempting to remove pre-right circle events for: {}".format(pre))
-        if pre and pre.right_circle_event is not None:
+        if pre != NilNode and pre.right_circle_event is not None:
             self.delete_circle_event(pre.right_circle_event)
         logging.info("Attempting to remove succ-left circle events for: {}".format(suc))
-        if suc and suc.left_circle_event is not None:
+        if suc != NilNode and suc.left_circle_event is not None:
             self.delete_circle_event(suc.left_circle_event)
         
         #add the centre of the circle as a vertex to DCEL
