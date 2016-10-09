@@ -7,6 +7,7 @@ from numpy.random import random
 from scipy.interpolate import splprep
 from scipy.interpolate import splev
 import IPython
+import logging
 
 #constants:
 ALPHA = 0.1
@@ -34,7 +35,11 @@ def sampleCircle(x,y,radius,numOfSteps):
     return np.column_stack((xPos,yPos))
     
 def drawCircle(ctx,x,y,r,fill=True):
-    ctx.arc(x,y,r,0,TWOPI)
+    try:
+        ctx.arc(x,y,r,0,TWOPI)
+    except TypeError as e:
+        print(x,y,r)
+        raise e
     if fill:
         ctx.fill()
     else:
@@ -55,6 +60,9 @@ def draw_dcel_faces(ctx,dcel):
     for f in dcel.faces:
         ctx.new_path()
         startEdge = f.outerComponent
+        if startEdge is None:
+            ctx.close_path()
+            continue
         ctx.move_to(startEdge.origin.x,startEdge.origin.y)
         current = startEdge.next
         while current is not startEdge:
@@ -67,9 +75,10 @@ def draw_dcel_edges(ctx,dcel):
     ctx.set_line_width(0.002)
     for e in dcel.halfEdges:
         v1,v2 = e.getVertices()
-        ctx.move_to(v1.x,v1.y)
-        ctx.line_to(v2.x,v2.y)
-        ctx.stroke()
+        if v1 is not None and v2 is not None:
+            ctx.move_to(v1.x,v1.y)
+            ctx.line_to(v2.x,v2.y)
+            ctx.stroke()
         
 
 def draw_dcel_vertices(ctx,dcel):
@@ -225,6 +234,7 @@ def get_circle_3p(p1,p2,p3):
     """
     Given 3 points, treat them as defining two chords on a circle,
     intersect them to find the centre, then calculate the radius
+    Thus: circumcircle
     """
     arb_height = 200
     #mid points and norms:
