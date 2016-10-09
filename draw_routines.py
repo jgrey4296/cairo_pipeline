@@ -20,6 +20,7 @@ from voronoi import Voronoi
 from voronoiexperiments import VExperiment
 
 #constants:
+DRAW_INTERMEDIATE = False
 PIX = 1/pow(2,10)
 op = None
 cairo_surface = None
@@ -151,6 +152,7 @@ def drawVoronoi(X_size,Y_size):
     siteLocations = voronoiInstance.initGraph(data=siteLocations)
     if not loaded:
         voronoiInstance.save_graph(siteLocations)
+        
     voronoiInstance.draw_intermediate_states()
     utils.write_to_png(cairo_surface,filename,i)
     while result:
@@ -162,7 +164,9 @@ def drawVoronoi(X_size,Y_size):
         logging.info(voronoiInstance.beachline)
 
         voronoiInstance.draw_intermediate_states()
-        utils.write_to_png(cairo_surface,filename,i)
+        voronoiInstance.draw_voronoi_diagram(clear=False)
+        if DRAW_INTERMEDIATE:
+            utils.write_to_png(cairo_surface,filename,i)
         #IPython.embed()
         if i > 150:
             #rough infinite loop guard
@@ -170,12 +174,19 @@ def drawVoronoi(X_size,Y_size):
 
     #calculations finished, get the final DCEL:
     dcel = voronoiInstance.finalise_DCEL()
+
+    #force ends to all edges:
+    dummy_vertex = dcel.newVertex(0.5,0.5)
+    
+    incomplete_edges = [x for x in dcel.halfEdges if x.origin is None]
+    for x in incomplete_edges:
+        x.origin = dummy_vertex
+    
     #todo: draw the final dcel
     voronoiInstance.draw_voronoi_diagram()
     finalFilename = "{}-FINAL".format(filename)
     utils.write_to_png(cairo_surface,finalFilename,i+1)
-    
-    
+
 def drawVExp(X_size,Y_size):
     vexpInstance.drawTest()
     
