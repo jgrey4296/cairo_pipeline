@@ -1,4 +1,5 @@
 from math import atan2
+import logging
 
 # An implementation of a Double-Edge Connected List
 # from de Berg's Computational Geometry Book
@@ -8,6 +9,7 @@ class Vertex(object):
     """ A Simple vertex for two dimension """
     
     def __init__(self,x,y,iEdge=None):
+        logging.debug("Creating vertex at: {} {}".format(x,y))
         self.x = x
         self.y = y
         self.incidentEdge = iEdge
@@ -23,6 +25,19 @@ class HalfEdge(object):
         self.next = None
         self.prev = None
 
+    def addVertex(self,vertex):
+        if self.origin is None:
+            self.origin = vertex
+        elif self.twin.origin is None:
+            self.twin.origin = vertex
+        
+    def swapFaces(self):
+        if not self.face and self.twin.face:
+            raise Exception("Can't swap faces when at least one is missing")
+        oldFace = self.face
+        self.face = self.twin.face
+        self.twin.face = oldFace
+        
     def setNext(self,nextEdge):
         self.next = nextEdge
 
@@ -31,16 +46,20 @@ class HalfEdge(object):
 
     def getVertices(self):
         return (self.origin,self.twin.origin)
-        
+
+    def isInfinite(self):
+        return self.origin is None or self.twin is None or self.twin.origin is None
+    
 #--------------------
 class Face(object):
     """ A Face with a start point for its outer component list, and all of its inner components """
     
     def __init__(self):
         #Starting point for bounding edges, going anti-clockwise
-        self.outerComponent = []
+        self.outerComponent = None
         #Clockwise inner loops
         self.innerComponents = []
+        self.unsortedEdges = []
         
 #--------------------
 class DCEL(object):
@@ -60,14 +79,17 @@ class DCEL(object):
     def newEdge(self,originVertex,twinVertex,face=None,twinFace=None,prev=None,prev2=None):
         """ Get a new half edge pair, after specifying its start and end.
             Can set the faces, and previous edges of the new edge pair. 
-            Returns the outer edge """
+            Returns the outer edge
+        """
         e1 = HalfEdge(originVertex,None)
         e2 = HalfEdge(twinVertex,e1)
-        e1.twin = e2
+        e1.twin = e2 #fixup
         if face:
             e1.face = face
+            face.innerComponents.append(e1)
         if twinFace:
             e2.face = twinFace
+            twinFace.innerComponents.append(e2)
         if prev:
             e1.prev = prev
             prev.next = e1
@@ -105,7 +127,6 @@ class DCEL(object):
             if isInnerComponentList:
                 face.innerComponents.append(current)
 
-            
     def orderVertices(self,focus,vertices):
         """ Given a focus point and a list of vertices, sort them
             by the counter-clockwise angle position they take relative """
