@@ -71,12 +71,13 @@ class BeachLine(object):
             self.root = Node(value,arc=self.arc)
             self.nodes.append(self.root)
             self.balance(self.root)
+            return self.root
         else:
             node,direction = self.search(value)
             if isinstance(direction,Right) or isinstance(direction,Centre):
-                self.insert_successor(node,value)
+                return self.insert_successor(node,value)
             else: #isinstance(direction,Left):
-                self.insert_predecessor(node,value)
+                return self.insert_predecessor(node,value)
         
     def insert_successor(self,existing_node,newValue):
         self.arcs_added.append(newValue)
@@ -121,7 +122,7 @@ class BeachLine(object):
         rbTreeDelete_textbook(self,node)
         if node in self.nodes:
             self.nodes.remove(node)
-        del node
+        #del node
         
     def search(self,x,d=None,verbose=False):
         """ Search the tree for a value, getting closest node to it, 
@@ -286,7 +287,7 @@ class Node(object):
     """ The internal node class for the rbtree.  """
     i = 0
     
-    def __init__(self,value,parent=NilNode,data=None,red=True,arc=True):
+    def __init__(self,value,parent=NilNode,red=True,arc=True):
         self.id = Node.i
         Node.i += 1
         #Node Data:
@@ -296,7 +297,8 @@ class Node(object):
         self.value = value
         self.left_circle_event = None
         self.right_circle_event = None
-        self.data = data
+        #Additional Data:
+        self.data = {}
         #Children:
         self.left = NilNode
         self.right = NilNode
@@ -491,11 +493,11 @@ class Node(object):
         current = self
         found = False
         while not found:
-            logging.debug("predecessor loop: {}".format(current))
+            #logging.debug("predecessor loop: {}".format(current))
             if current.parent.right == current or current.parent == NilNode:
                 found = True
             current = current.parent
-        logging.debug("pred loop fin: {}".format(current))
+        #logging.debug("pred loop fin: {}".format(current))
         return current
 
     def get_successor(self):
@@ -504,11 +506,11 @@ class Node(object):
         current = self
         found = False
         while not found:
-            logging.debug("successor loop: {}".format(current))
+            #logging.debug("successor loop: {}".format(current))
             if current.parent.left == current or current.parent == NilNode:
                 found = True
             current = current.parent
-        logging.debug("succ loop fin: {}".format(current))
+        #logging.debug("succ loop fin: {}".format(current))
         return current
         
     def getMin(self):
@@ -742,7 +744,7 @@ def rbTreeDelete_textbook(tree,z):
         logging.debug("Fixingup up x: {}".format(x))
         rbDeleteFixup_textbook(tree,x)
     #collapse when two nodes are the same
-    if orig_pred != NilNode and orig_pred != NilNode and orig_pred.value == orig_succ.value:
+    if orig_pred != NilNode and orig_succ != NilNode and orig_pred.value == orig_succ.value:
         logging.info("Collapsing with successor {}".format(orig_succ))
         tree.delete(orig_succ)
     logging.debug("Finished deletion")
