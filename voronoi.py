@@ -48,8 +48,7 @@ class Voronoi(object):
         self.sX = sizeTuple[0]
         self.sY = sizeTuple[1]
         self.nodeSize = num_of_nodes
-        #Heap of tuples of site/circle events
-        #(y_coord, SITE , np.array(xy_coord)) || (y_c, CIRCLE, np.array(xy_c), arc,ACTIVE)
+        #Heap of site/circle events
         self.events = []
         #backup of the original sites
         self.sites = []
@@ -61,7 +60,30 @@ class Voronoi(object):
         self.sweep_position = None
         #The output voronoi diagram as a DCEL
         self.dcel = None
+        #storage of breakpoint tuples -> halfedge
+        self.halfEdges = {}
 
+
+    def storeEdge(self,edge,bp1,bp2):
+        """ Store an incomplete edge by the 2 pairs of nodes that define the breakpoints """
+        if (bp1,bp2) in self.halfEdges:
+            raise Exception("Duplicating edges by breakpoint")
+        self.halfEdges[(bp1,bp2)] = edge
+        
+    def hasEdge(self,bp1,bp2):
+        return (bp1,bp2) in self.halfEdges
+
+    def getEdge(self,bp1,bp2):
+        if self.hasEdge(bp1,bp2):
+            return self.halfEdges[(bp1,bp2)]
+        else:
+            return None
+
+    def removeEdge(self,bp1,bp2):
+        if not self.hasEdge(bp1,bp2):
+            raise Exception("trying to remove a non-existing edge")
+        del self.halfEdges[(bp1,bp2)]
+        
     def save_graph(self,values):
         with open(SAVENAME,'wb') as f:
             pickle.dump(values,f)
@@ -74,7 +96,9 @@ class Voronoi(object):
     def initGraph(self,data=None):
         """ Create a graph of initial random sites """
         logging.info("Initialising graph")
+        self.dcel = DCEL() #init the dcel
         values = data
+        #create a (n,2) array of coordinates for the sites, if no data has been loaded
         if values is None:
             for n in range(self.nodeSize):
                 newSite = random.random(2)
@@ -83,25 +107,27 @@ class Voronoi(object):
                 else:
                     values = np.row_stack((values,newSite))
 
+        #create the site events:
         for site in values:
-            event = SiteEvent(site)
+            futureFace = self.dcel.newFace()
+            event = SiteEvent(site,face=futureFace)
             heapq.heappush(self.events,event)
             self.sites.append(event)
-        self.dcel = DCEL()
+        
         #Create beachline
         self.beachline = BeachLine()
         return values
         
 
-    def add_circle_event(self,loc,sourceNode,left=True):
+    def add_circle_event(self,loc,sourceNode,voronoiVertex,left=True):
         if loc[1] < self.sweep_position.y() or np.allclose(loc[1],self.sweep_position.y()):
             logging.warning("Breaking out of add circle event: at/beyond sweep position")
             return
         #if True: #loc[1] > self.sweep_position[0]:
         if left:   
-            event = CircleEvent(loc,sourceNode,i=currentStep)
+            event = CircleEvent(loc,sourceNode,voronoiVertex,i=currentStep)
         else:
-            event = CircleEvent(loc,sourceNode,left=False,i=currentStep)
+            event = CircleEvent(loc,sourceNode,voronoiVertex,left=False,i=currentStep)
         logging.info("Adding: {}".format(event))
         heapq.heappush(self.events,event)
         self.circles.append(event)
@@ -140,6 +166,7 @@ class Voronoi(object):
 
     def finalise_DCEL(self):
         logging.info("Finalising DCEL")
+
         #take remaining points in tree, convert to bounded edges
 
         #traverse DCEL to create faces
@@ -147,10 +174,11 @@ class Voronoi(object):
         return self.dcel
     
                     
-    def draw_voronoi_diagram(self):
+    def draw_voronoi_diagram(self,clear=True):
         """ Draw the final diagram """
         logging.info("Drawing final voronoi diagram")
-        utils.clear_canvas(self.ctx)
+        if clear:
+            utils.clear_canvas(self.ctx)
         self.ctx.set_source_rgba(*COLOUR)
         
         #draw sites
@@ -158,9 +186,11 @@ class Voronoi(object):
             utils.drawCircle(self.ctx,*site.loc,0.007)
         
         #draw faces
-
+        utils.drawDCEL(self.ctx,self.dcel)                       
+        
         #draw edge vertices
 
+        
     def update_arcs(self,d):
         self.beachline.update_arcs(d)
         
@@ -278,7 +308,8 @@ class Voronoi(object):
         new_arc = Parabola(*event.loc,self.sweep_position.y())
         #if beachline is empty: add and return
         if self.beachline.isEmpty():
-            self.beachline.insert(new_arc)
+            newNode = self.beachline.insert(new_arc)
+            newNode.data['face'] = event.face
             return
                 
         #get the x position of the event
@@ -305,10 +336,37 @@ class Voronoi(object):
         newTriple = [closest_arc_node.value.id,new_node.value.id,duplicate_node.value.id]
         tripleString = "-".join([ascii_uppercase[x] for x in newTriple])
         logging.info("Split {} into {}".format(ascii_uppercase[newTriple[0]],tripleString))
-            
-            
-        #create half edges
 
+        #add in the face as a data point for the new node and duplicate
+        new_node.data['face'] = event.face
+        duplicate_node.data['face'] = closest_arc_node.data['face']
+        
+        #create a half-edge pair between the two nodes, store the tuple (edge,arc)
+        face_a = event.face
+        if 'face' in closest_arc_node.data:
+            face_b = closest_arc_node.data['face']
+        else:
+            raise Exception("A Face can't be found for a node")
+        #self.dcel.newVertex(xPos,closest_arc_node.value(xPos)[0][1])
+        #set the origin points to be undefined
+        #link the edges with the faces associated with the sites
+        logging.debug("Adding edge")
+        newEdge = self.dcel.newEdge(None,None,face=face_b,twinFace=face_a)
+
+        #if there was an edge of closest_arc -> closest_arc.successor: update it
+        dup_node_succ = duplicate_node.get_successor()
+        if dup_node_succ:
+            e1 = self.getEdge(closest_arc_node,dup_node_succ)
+            if e1:
+                self.removeEdge(closest_arc_node,dup_node_succ)
+                self.storeEdge(e1,duplicate_node,dup_node_succ)
+
+        
+        logging.debug("Linking edge from {} to {}".format(closest_arc_node,new_node))
+        self.storeEdge(newEdge,closest_arc_node,new_node)
+        logging.debug("Linking r-edge from {} to {}".format(new_node,duplicate_node))
+        self.storeEdge(newEdge.twin,new_node,duplicate_node)
+        
         #create circle events:
         self.calculate_circle_events(new_node)
         
@@ -329,7 +387,7 @@ class Voronoi(object):
                 left_circle_loc = utils.get_lowest_point_on_circle(*left_circle)
                 #check the l_t_p/s arent in this circle
                 #note: swapped this to add on the right ftm
-                self.add_circle_event(left_circle_loc,left_triple[1],left=False)
+                self.add_circle_event(left_circle_loc,left_triple[1],left_circle[0],left=False)
             else:
                 logging.warn("Left circle response: {}".format(left_circle))
 
@@ -341,7 +399,7 @@ class Voronoi(object):
             if right_circle and not utils.isClockwise(*right_points,cartesian=True):
                 right_circle_loc = utils.get_lowest_point_on_circle(*right_circle)
                 #note: swapped this to add on the left ftm
-                self.add_circle_event(right_circle_loc,right_triple[1])
+                self.add_circle_event(right_circle_loc,right_triple[1],right_circle[0])
             else:
                 logging.warn("Right circle response: {}".format(right_circle))
 
@@ -357,7 +415,6 @@ class Voronoi(object):
             self.delete_circle_event(node.right_circle_event)
         pre = node.get_predecessor()
         suc = node.get_successor()
-        self.beachline.delete_node(node)
 
         logging.info("attempting to remove pre-right circle events for: {}".format(pre))
         if pre != NilNode and pre.right_circle_event is not None:
@@ -366,8 +423,42 @@ class Voronoi(object):
         if suc != NilNode and suc.left_circle_event is not None:
             self.delete_circle_event(suc.left_circle_event)
         
-        #add the centre of the circle as a vertex to DCEL
+        #add the centre of the circle causing the event as a vertex record
+        logging.debug("Creating Vertex")
+        newVertex = self.dcel.newVertex(event.vertex[0],event.vertex[1])
+
+        #attach the vertex as a defined point in the half edges for the three faces,
+        #these faces are pre<->node and node<->succ
+
+        e1 = self.getEdge(pre,node)
+        e2 = self.getEdge(node,suc)
+        if e1:
+            logging.debug("Adding vertex to {}-{}".format(pre,node))
+            e1.addVertex(newVertex)
+        else:
+            logging.debug("No edge found for {}-{}".format(pre,node))
+        if e2:
+            logging.debug("Adding vertex to {}-{}".format(node,suc))
+            e2.addVertex(newVertex)
+        else:
+            logging.debug("No r-edge found for {}-{}".format(node,suc))
+            
         
+        if not 'face' in pre.data or not 'face' in suc.data:
+            raise Exception("Circle event on faceless nodes")
+            
+        #create two half-edge records for the new breakpoint of the beachline
+        logging.debug("Creating a new half-edge {}-{}".format(pre,suc))
+        newEdge = self.dcel.newEdge(newVertex,None,face=pre.data['face'],twinFace=suc.data['face'])
+        
+        #store the new edge, but only for the open breakpoint
+        #the breakpoint being the predecessor and successor, now partners following
+        #removal of the middle node above in this function  
+        self.storeEdge(newEdge,pre,suc)
+
+        #delete the node, no longer needed as the arc has reduced to 0
+        self.beachline.delete_node(node)
+
         #recheck for new circle events
         if pre:
             self.calculate_circle_events(pre,left=False)
@@ -381,7 +472,7 @@ class Voronoi(object):
 class VEvent(object):
 
     def __init__(self,site_location,i=-1):
-        self.loc = site_location
+        self.loc = site_location #tuple
         self.step = i
 
     def y(self):
@@ -394,27 +485,29 @@ class VEvent(object):
         return False
     
 class SiteEvent(VEvent):
-    def __init__(self,site_loc,i=None):
+    def __init__(self,site_loc,i=None,face=None):
         super().__init__(site_loc,i=i)
-
+        self.face = face
+        
     def __str__(self):
         return "Site Event: Loc: {}".format(self.loc)
 
 class CircleEvent(VEvent):
-    def __init__(self,site_loc,sourceNode,left=True,i=None):
+    def __init__(self,site_loc,sourceNode,voronoiVertex,left=True,i=None):
         if left and sourceNode.left_circle_event is not None:
             raise Exception("Trying to add a circle event to a taken left node: {} : {}".format(sourceNode,sourceNode.left_circle_event))
         elif not left and sourceNode.right_circle_event is not None:
             raise Exception("Trying to add a circle event to a taken right node: {} : {}".format(sourceNode,sourceNode.right_circle_event))
         super().__init__(site_loc,i=i)
         self.source = sourceNode
+        self.vertex = voronoiVertex #vvertex == centre of circle, not lowest point
         self.active = True
         self.left = left
         if left:
             sourceNode.left_circle_event = self
         else:
             sourceNode.right_circle_event = self
-
+            
     def __str__(self):
         return "Circle Event: {}, Node: {}, Left: {}, Added On Step: {}".format(self.loc,
                                                                                 self.source,
