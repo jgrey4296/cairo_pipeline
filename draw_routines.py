@@ -13,6 +13,7 @@ import utils
 import IPython
 import utils
 import logging
+from random import choice
 #Drawing classes
 from ssClass import SandSpline
 from branches import Branches
@@ -45,6 +46,7 @@ voronoi_nodes = 10
 
 #top level draw command:
 def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render"):
+    """ The generic setup function main calls for all drawing """
     logging.info("Drawing: {}".format(drawOption))
     #modify and update globals:
     global op
@@ -93,8 +95,8 @@ def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render")
     if surface:
         utils.write_to_png(surface,filenamebase)
     
-#step the drawing deformation:
 def iterateAndDraw():
+    """ Run transforms repeatedly on non-voronoi drawing classes """
     for i in range(iterationNum):
         logging.info('step:',i)
         drawInstance.step(granulate,interpolateGranules)
@@ -103,20 +105,24 @@ def iterateAndDraw():
 #------------------------------
 
 def initCircles():
+    """ Add a number of circles to the drawing instance, ready for deformation """
     for i in range(numOfElements):
         logging.info('adding circle:',i)
         drawInstance.addCircle()
 
 def initLines():
+    """ Add a number of lines to the drawing instance, ready for deformation """
     for i in range(numOfElements):
         logging.info('adding line:',i)
         line = [x for x in random(4)]
         drawInstance.addLine(*line)
 
 def initSpecificLine():
+    """ Add just a single line  """
     drawInstance.addLine(0.1,0.5,0.9,0.5)
 
 def bezierTest():
+    """ Setup a simple bezier curve for deformation  """
     start = [0.0,0.5]
     cp = [0.4,0.6]
     cp2 = [0.8,0.1]
@@ -124,6 +130,7 @@ def bezierTest():
     drawInstance.addBezier2cp(start,cp,cp2,end)
 
 def manyCircles():
+    """ Add a number of circles for deformation """
     xs = np.linspace(0.1,0.9,10)
     ys = np.linspace(0.1,0.9,10)
 
@@ -132,57 +139,70 @@ def manyCircles():
             drawInstance.addCircle(x,y,0.0002,0.0003)
     
 def drawBranch(X_size,Y_size):
+    """ Incomplete, intended to draw trees  """
     branchInstance.addBranch()
     for i in np.arange(branchIterations):
         logging.info('Branch Growth:',i)
         branchInstance.grow(i)
     branchInstance.draw()
 
+#----------
+# VORONOI:
+#----------
 def drawVoronoi(X_size,Y_size):
     """ Step through the construction of a voronoi diagram """
     i = 0
     result = True
     siteLocations = None
     loaded = False
-    try:
+    try: #try to load a saved set of points
         siteLocations = voronoiInstance.load_graph()
         loaded = True
     except Exception as e:
         logging.warn("Using Default Locations")
+    #setup the points internally
     siteLocations = voronoiInstance.initGraph(data=siteLocations)
+    #Save the points for reuse
     if not loaded:
         voronoiInstance.save_graph(siteLocations)
         
+    #Draw the starting set of points    
     voronoiInstance.draw_intermediate_states()
     utils.write_to_png(cairo_surface,filename,i)
+    
     while result:
         i += 1
         logging.info("\n---------- Calculating step {}".format(i))
         logging.info(voronoiInstance.beachline)
+        
+        #The main algorithm step:
         result = voronoiInstance.calculate(i)
-        logging.info("----- Modifications:")
+        
+        logging.info("----- Beachline Modifications:")
         logging.info(voronoiInstance.beachline)
+        logging.info("----")
 
-        voronoiInstance.draw_intermediate_states()
-        voronoiInstance.draw_voronoi_diagram(clear=False)
+        #Debug intermediate images:
         if DRAW_INTERMEDIATE:
+            voronoiInstance.draw_intermediate_states()
+            voronoiInstance.draw_voronoi_diagram(clear=False)
             utils.write_to_png(cairo_surface,filename,i)
-        #IPython.embed()
+
+        #rough infinite loop guard
         if i > 150:
-            #rough infinite loop guard
             raise Exception('Voronoi has run too long')
 
+    logging.info("-------------------- Finalising")
     #calculations finished, get the final DCEL:
-    dcel = voronoiInstance.finalise_DCEL()
+    dcel = voronoiInstance.finalise_DCEL(surface=cairo_surface,filename=filename)
 
-    #force ends to all edges:
-    dummy_vertex = dcel.newVertex(0.5,0.5)
+    #Draw each face individually
+    for i,f in enumerate(dcel.faces):
+        logging.info("Drawing face: {}".format(i))
+        faceName = "{}_face_{}".format(filename,i)
+        utils.draw_dcel_single_face(voronoiInstance.ctx,dcel,f)
+        utils.write_to_png(cairo_surface,faceName)
     
-    incomplete_edges = [x for x in dcel.halfEdges if x.origin is None]
-    for x in incomplete_edges:
-        x.origin = dummy_vertex
-    
-    #todo: draw the final dcel
     voronoiInstance.draw_voronoi_diagram()
     finalFilename = "{}-FINAL".format(filename)
     utils.write_to_png(cairo_surface,finalFilename,i+1)
