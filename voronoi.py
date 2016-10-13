@@ -18,6 +18,7 @@ from dcel import DCEL
 
 import logging
 
+DEBUG_INFINITE_RESOLUTION = True
 
 #SAVE FILE:
 SAVENAME = "graph_data.pkl"
@@ -36,6 +37,8 @@ BEACH_NO_INTERSECT_COLOUR = [1,0,0,1]
 BEACH_RADIUS = 0.002
 SWEEP_LINE_COLOUR = [0,0,1,1]
 LINE_WIDTH = 0.002
+#:
+BBOX = [0,0,1,1]
 
 currentStep = 0
 
@@ -63,6 +66,37 @@ class Voronoi(object):
         #storage of breakpoint tuples -> halfedge
         self.halfEdges = {}
 
+    def complete_edges(self,surface=None,filename=None):
+        """ get any infinite edges, and complete their intersections """
+        logging.info("Infinite Edges:")
+        i = 0
+        i_pairs = [x for x in self.halfEdges.items() if x[1].origin is None]
+        if DEBUG_INFINITE_RESOLUTION and surface and filename:
+            saveName = "{}_edge_completion_{}".format(filename,i)
+            utils.drawDCEL(self.ctx,self.dcel)
+            utils.write_to_png(surface,saveName)
+        for ((a,b),c) in i_pairs:
+            i += 1
+            #a and b are nodes 
+            logging.info("{} Infinite Edge: {}-{}".format(i,a,b))
+            if b.get_successor() is NilNode:
+                continue
+            intersection = a.value.intersect(b.value)
+            if intersection is not None and intersection.shape[0] > 0:
+                newVertex = self.dcel.newVertex(intersection[0,0],intersection[0,1])
+                c.addVertex(newVertex)
+                if DEBUG_INFINITE_RESOLUTION and surface and filename:
+                    saveName = "{}_edge_completion_{}".format(filename,i)
+                    utils.drawDCEL(self.ctx,self.dcel)
+                    utils.write_to_png(surface,saveName)
+            else:
+                raise Exception("No intersections detected when completing an infinite edge")
+
+        
+    def constrain_complete_edges(self,bbox=[0,0,1,1]):
+        """ constrain all the edges to be in a bounding box: """
+        self.dcel.constrain_half_edges(bbox)
+        
 
     def storeEdge(self,edge,bp1,bp2):
         """ Store an incomplete edge by the 2 pairs of nodes that define the breakpoints """
@@ -164,13 +198,15 @@ class Voronoi(object):
             raise Exception("Unrecognised Event")
         return True 
 
-    def finalise_DCEL(self):
+    def finalise_DCEL(self,surface=None,filename=None):
         logging.info("Finalising DCEL")
-
-        #take remaining points in tree, convert to bounded edges
-
-        #traverse DCEL to create faces
-
+        logging.info(self.dcel)
+        self.complete_edges(surface=surface,filename=filename)
+        self.constrain_complete_edges(bbox=BBOX)
+        #self.complete_faces()
+        
+        #todo: connect edges of faces together
+        logging.info(self.dcel)
         return self.dcel
     
                     
@@ -342,7 +378,7 @@ class Voronoi(object):
         duplicate_node.data['face'] = closest_arc_node.data['face']
         
         #create a half-edge pair between the two nodes, store the tuple (edge,arc)
-        face_a = event.face
+        face_a = new_node.data['face']
         if 'face' in closest_arc_node.data:
             face_b = closest_arc_node.data['face']
         else:
@@ -351,9 +387,10 @@ class Voronoi(object):
         #set the origin points to be undefined
         #link the edges with the faces associated with the sites
         logging.debug("Adding edge")
-        newEdge = self.dcel.newEdge(None,None,face=face_b,twinFace=face_a)
+        newEdge = self.dcel.newEdge(None,None,face=face_a,twinFace=face_b)
 
         #if there was an edge of closest_arc -> closest_arc.successor: update it
+        #because closest_arc is not adjacent to successor any more, duplicate_node is
         dup_node_succ = duplicate_node.get_successor()
         if dup_node_succ:
             e1 = self.getEdge(closest_arc_node,dup_node_succ)
@@ -407,15 +444,15 @@ class Voronoi(object):
     def handleCircleEvent(self,event):
         logging.info("Handling Circle Event: {}".format(event))
         #remove disappearing arc from tree
-        #and update breakpoints
+        #and update breakpoints, remove false alarm circle events
         node = event.source
+        pre = node.get_predecessor()
+        suc = node.get_successor()
+
         if node.left_circle_event:
             self.delete_circle_event(node.left_circle_event)
         if node.right_circle_event:
             self.delete_circle_event(node.right_circle_event)
-        pre = node.get_predecessor()
-        suc = node.get_successor()
-
         logging.info("attempting to remove pre-right circle events for: {}".format(pre))
         if pre != NilNode and pre.right_circle_event is not None:
             self.delete_circle_event(pre.right_circle_event)
@@ -436,7 +473,7 @@ class Voronoi(object):
             logging.debug("Adding vertex to {}-{}".format(pre,node))
             e1.addVertex(newVertex)
         else:
-            logging.debug("No edge found for {}-{}".format(pre,node))
+            logging.debug("No r-edge found for {}-{}".format(pre,node))
         if e2:
             logging.debug("Adding vertex to {}-{}".format(node,suc))
             e2.addVertex(newVertex)
@@ -449,7 +486,12 @@ class Voronoi(object):
             
         #create two half-edge records for the new breakpoint of the beachline
         logging.debug("Creating a new half-edge {}-{}".format(pre,suc))
-        newEdge = self.dcel.newEdge(newVertex,None,face=pre.data['face'],twinFace=suc.data['face'])
+        newEdge = self.dcel.newEdge(None,newVertex,face=pre.data['face'],twinFace=suc.data['face'])
+
+        if e1:
+            e1.setPrev(newEdge)
+        if e2:
+            e2.setNext(newEdge)
         
         #store the new edge, but only for the open breakpoint
         #the breakpoint being the predecessor and successor, now partners following
