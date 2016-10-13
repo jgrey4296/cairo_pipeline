@@ -1,6 +1,7 @@
 import cairo
 import math
-from math import sin,cos
+from math import sin,cos,atan2
+from random import choice
 import numpy as np
 from numpy import pi
 from numpy.random import random
@@ -65,12 +66,26 @@ def draw_dcel_faces(ctx,dcel):
             continue
         ctx.move_to(startEdge.origin.x,startEdge.origin.y)
         current = startEdge.next
-        while current is not startEdge:
+        while current is not startEdge and current is not None:
             ctx.line_to(current.origin.x,current.origin.y)
             current = current.next
         ctx.close_path()
         ctx.fill()
-    
+
+def draw_dcel_single_face(ctx,dcel,face):
+    clear_canvas(ctx)
+    ctx.set_source_rgba(0.4,0.8,0.1,1)
+    ctx.set_line_width(0.004)
+    first = True
+    for x in face.innerComponents:
+        v1,v2 = x.getVertices()
+        if v1 is not None and v2 is not None:
+            logging.info("Drawing from ({},{}) to ({},{})".format(v1.x,v1.y,
+                                                                  v2.x,v2.y))
+            ctx.move_to(v1.x,v1.y)
+            ctx.line_to(v2.x,v2.y)
+            ctx.stroke()
+        
 def draw_dcel_edges(ctx,dcel):
     ctx.set_line_width(0.002)
     for e in dcel.halfEdges:
@@ -79,12 +94,20 @@ def draw_dcel_edges(ctx,dcel):
             ctx.move_to(v1.x,v1.y)
             ctx.line_to(v2.x,v2.y)
             ctx.stroke()
-        
 
+def draw_dcel_halfEdge(ctx,halfEdge):
+    ctx.set_line_width(0.002)
+    v1,v2 = halfEdge.getVertices()
+    if v1 is not None and v2 is not None:
+        ctx.move_to(v1.x,v1.y)
+        ctx.line_to(v2.x,v2.y)
+        ctx.stroke()
+            
 def draw_dcel_vertices(ctx,dcel):
     """ Draw all the vertices in a dcel as dots """
     for v in dcel.vertices:
-        drawCircle(ctx,v.x,v.y,0.01)
+        if v is not None:
+            drawCircle(ctx,v.x,v.y,0.01)
         
 
 def clear_canvas(ctx):
@@ -203,7 +226,7 @@ def line_segment_intersection(p,pr,q,qs):
 
 
 def get_distance(p1,p2):
-    dSquared = pow(p1-p2,2)
+    dSquared = pow(p2-p1,2)
     summed = dSquared[:,0] + dSquared[:,1]
     sqrtd = np.sqrt(summed)
     return sqrtd
@@ -214,7 +237,7 @@ def get_normal(p1,p2):
     d = get_distance(p1,p2)
     if np.allclose(d,0):
         return np.array([0,0])
-    n = (p1-p2)
+    n = (p2-p1)
     normalized = n / d
     return normalized
 
@@ -428,3 +451,5 @@ def get_closest_on_side(refPoint,possiblePoints,left=True):
     except ValueError as e:
         return None
             
+def angle_between_points(a,b):
+    return atan2(b[1]-a[1],b[0]-a[0])
