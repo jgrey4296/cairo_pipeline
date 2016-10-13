@@ -4,3 +4,4 @@ sys.path.insert(0,os.path.abspath(".."))
 import beachline
 import Parabola
 import Quadratic
+import dcel
