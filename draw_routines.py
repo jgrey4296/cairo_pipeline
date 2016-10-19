@@ -21,10 +21,17 @@ from voronoi import Voronoi
 from voronoiexperiments import VExperiment
 
 #constants:
+FACE_DRAW_LIMIT = 12
+EDGE_DRAW_LIMIT = 50
+
 DRAW_INTERMEDIATE = False
+DRAW_FACES = True
+PRE_DRAW_EDGES = False
+DRAW_EDGES = False
 PIX = 1/pow(2,10)
 op = None
 cairo_surface = None
+cairo_context = None
 filename = None
 #instances of drawing classes
 drawInstance = None
@@ -55,8 +62,10 @@ def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render")
     global voronoiInstance
     global vexpInstance
     global cairo_surface
+    global cairo_context
     global filename
     cairo_surface = surface
+    cairo_context = ctx
     filename = filenamebase
     op = ctx.get_operator()
     #setup the draw instances
@@ -89,6 +98,8 @@ def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render")
         drawVoronoi(X_size,Y_size)
     elif drawOption == "vexp":
         drawVExp(X_size,Y_size)
+    elif drawOption == "textTest":
+        drawTextTest(X_size,Y_size)
     else:
         raise Exception("Unrecognized draw routine",drawOption)
 
@@ -193,16 +204,75 @@ def drawVoronoi(X_size,Y_size):
             raise Exception('Voronoi has run too long')
 
     logging.info("-------------------- Finalising")
-    #calculations finished, get the final DCEL:
+
+    if PRE_DRAW_EDGES:
+        logging.info("DRAWING PRE_EDGES")
+        for e in voronoiInstance.dcel.halfEdges:
+            if e.index > EDGE_DRAW_LIMIT:
+                break;
+            if e.drawn:
+                continue
+            logging.info("Drawing edge: {}".format(e.index))
+            edgeName = "{}_edge_pre_{}".format(filename,e.index)
+            utils.draw_dcel_halfEdge(voronoiInstance.ctx,e)
+            utils.write_to_png(cairo_surface,edgeName)
+            e.drawn = True
+            #e.twin.drawn = True
+
+    
+    
+    #calculations finished, Do the first half of finalising
+    #complete, then purge, edges
     dcel = voronoiInstance.finalise_DCEL(surface=cairo_surface,filename=filename)
 
-    #Draw each face individually
-    for i,f in enumerate(dcel.faces):
-        logging.info("Drawing face: {}".format(i))
-        faceName = "{}_face_{}".format(filename,i)
-        utils.draw_dcel_single_face(voronoiInstance.ctx,dcel,f)
-        utils.write_to_png(cairo_surface,faceName)
+    dcel.verify_edges()
     
+    #IPython.embed()
+
+    #Draw each face individually
+    if DRAW_FACES:
+        logging.info("DRAWING FACES")
+        for f in dcel.faces:
+            if f.index > FACE_DRAW_LIMIT:
+                break;
+            logging.info("Drawing face: {}".format(f.index))
+            faceName = "{}_face_{}".format(filename,f.index)
+            utils.draw_dcel_single_face(voronoiInstance.ctx,dcel,f,clear=True)
+            utils.write_to_png(cairo_surface,faceName)
+
+
+    #IPython.embed()
+            
+    dcel = voronoiInstance.complete_faces()
+
+    if DRAW_EDGES:
+        logging.info("DRAWING POST EDGES")
+        for e in dcel.halfEdges:
+            if e.index > EDGE_DRAW_LIMIT:
+                break;
+            #if e.drawn:
+            #    continue
+            logging.info("Drawing edge: {}".format(e.index))
+            edgeName = "{}_edge_{}".format(filename,e.index)
+            utils.draw_dcel_halfEdge(voronoiInstance.ctx,e)
+            utils.write_to_png(cairo_surface,edgeName)
+            e.drawn = True
+            #e.twin.drawn = True
+    
+    #Draw each face individually
+    if DRAW_FACES:
+        logging.info("DRAWING POST-FACES")
+        for f in dcel.faces:
+            if f.index > EDGE_DRAW_LIMIT:
+                break;
+            logging.info("Drawing face post completion: {}".format(f.index))
+            faceName = "{}_face_pc_{}".format(filename,f.index)
+            utils.draw_dcel_single_face(voronoiInstance.ctx,dcel,f,clear=True)
+            utils.write_to_png(cairo_surface,faceName)
+    
+
+
+
     voronoiInstance.draw_voronoi_diagram()
     finalFilename = "{}-FINAL".format(filename)
     utils.write_to_png(cairo_surface,finalFilename,i+1)
@@ -210,9 +280,18 @@ def drawVoronoi(X_size,Y_size):
 def drawVExp(X_size,Y_size):
     vexpInstance.drawTest()
     
+def drawTextTest(x,y):
+    cairo_context.set_font_size(0.025)
+    cairo_context.set_source_rgba(*[0,1,1,1])
+    cairo_context.move_to(0.2,0.5)
+    cairo_context.show_text("hello")
+    utils.write_to_png(cairo_surface,"text_test")                  
 
+    
 def example_multi_render(Xs,Ys):
     for i in range(1000):
         #do something
         if i%10:
             utils.write_to_png(surface,filename,i=i)
+
+            
