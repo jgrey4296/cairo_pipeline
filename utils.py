@@ -9,13 +9,25 @@ from scipy.interpolate import splprep
 from scipy.interpolate import splev
 import IPython
 import logging
+import sys
+import random
+
+DRAW_TEXT = False
 
 #constants:
+TEXT = [0,1,1,1]
+EDGE = [1,0,0,1]
+VERTEX = [1,0,1,1]
+FACE = [0,0,1,1]
+START = [0,1,0,1]
+END = [1,0,0,1]
+
 ALPHA = 0.1
 BACKGROUND = [0,0,0,1]
 FRONT = [0.8,0.1,0.71,ALPHA]
 TWOPI = 2 * pi
 THREEFOURTHSTWOPI = 3/4 * TWOPI
+EPSILON = sys.float_info.epsilon
 
 def write_to_png(surface,filename,i=None):
     if i:
@@ -59,53 +71,91 @@ def drawDCEL(ctx,dcel):
     
 def draw_dcel_faces(ctx,dcel):
     for f in dcel.faces:
-        ctx.new_path()
-        startEdge = f.outerComponent
-        if startEdge is None:
-            ctx.close_path()
-            continue
-        ctx.move_to(startEdge.origin.x,startEdge.origin.y)
-        current = startEdge.next
-        while current is not startEdge and current is not None:
-            ctx.line_to(current.origin.x,current.origin.y)
-            current = current.next
-        ctx.close_path()
-        ctx.fill()
+        draw_dcel_single_face(ctx,dcel,f,clear=False)
 
-def draw_dcel_single_face(ctx,dcel,face):
-    clear_canvas(ctx)
-    ctx.set_source_rgba(0.4,0.8,0.1,1)
+def draw_dcel_single_face(ctx,dcel,face,clear=True):
+    if clear:
+        clear_canvas(ctx)
+        #then centre the face:
+        centre = face.getCentre()
+        invCentre = -centre
+        ctx.translate(*invCentre)
+        ctx.translate(0.5,0.5)
     ctx.set_line_width(0.004)
-    first = True
-    for x in face.innerComponents:
+    faceCentre = face.getCentre()
+    drawText(ctx,*faceCentre,str("F: {}".format(face.index)))
+    startRadius = 0.009
+    #Draw face edges:
+    for x in face.getEdges():
+        ctx.set_source_rgba(*FACE)            
         v1,v2 = x.getVertices()
         if v1 is not None and v2 is not None:
-            logging.info("Drawing from ({},{}) to ({},{})".format(v1.x,v1.y,
+            logging.debug("Drawing Face {} edge {}".format(face.index,x.index))
+            logging.debug("Drawing Face edge from ({},{}) to ({},{})".format(v1.x,v1.y,
                                                                   v2.x,v2.y))
             ctx.move_to(v1.x,v1.y)
             ctx.line_to(v2.x,v2.y)
             ctx.stroke()
+            #additional things to draw:
+            ctx.set_source_rgba(*START)
+            drawCircle(ctx,v1.x-0.005,v1.y,startRadius)
+            ctx.set_source_rgba(*END)
+            drawCircle(ctx,v2.x+0.005,v2.y,startRadius)
+            startRadius = 0.005
+    if clear:
+        ctx.translate(-0.5,-0.5)
+        ctx.translate(*centre)
+
+            
         
 def draw_dcel_edges(ctx,dcel):
+    drawnEdges = []
     ctx.set_line_width(0.002)
     for e in dcel.halfEdges:
+        i = e.index
+        #only draw if the end hasnt been drawn yet:
+        if i in drawnEdges:
+            continue
+        
+        ctx.set_source_rgba(*EDGE)
         v1,v2 = e.getVertices()
         if v1 is not None and v2 is not None:
+            centre = get_midpoint(v1.toArray(),v2.toArray())
+            
             ctx.move_to(v1.x,v1.y)
             ctx.line_to(v2.x,v2.y)
             ctx.stroke()
+            drawText(ctx,*centre,"E: {}".format(i))
+            drawText(ctx,v1.x,v1.y-0.05,"S{}".format(i))
+            drawText(ctx,v2.x,v2.y+0.05,"{}E".format(i))
+            #Record that this line has been drawn
+            drawnEdges.append(e.index)
+            #drawnEdges.append(e.twin.index)
+        else:
+            logging.warning("Trying to draw a line thats missing at least one vertex")
 
-def draw_dcel_halfEdge(ctx,halfEdge):
+def draw_dcel_halfEdge(ctx,halfEdge,clear=True):
+    if clear:
+        clear_canvas(ctx)
     ctx.set_line_width(0.002)
+    ctx.set_source_rgba(*EDGE)
     v1,v2 = halfEdge.getVertices()
     if v1 is not None and v2 is not None:
+        centre = get_midpoint(v1.toArray(),v2.toArray())
+        logging.debug("Drawing HalfEdge {} : {},{} - {},{}".format(halfEdge.index,v1.x,v1.y,v2.x,v2.y))
         ctx.move_to(v1.x,v1.y)
         ctx.line_to(v2.x,v2.y)
         ctx.stroke()
+        ctx.set_source_rgba(*START)
+        drawCircle(ctx,v1.x,v1.y,0.01)
+        ctx.set_source_rgba(*END)
+        drawCircle(ctx,v2.x,v2.y,0.01)
+        drawText(ctx,*centre,"HE: {}".format(halfEdge.index))
             
 def draw_dcel_vertices(ctx,dcel):
     """ Draw all the vertices in a dcel as dots """
     for v in dcel.vertices:
+        ctx.set_source_rgba(*VERTEX)
         if v is not None:
             drawCircle(ctx,v.x,v.y,0.01)
         
@@ -226,6 +276,8 @@ def line_segment_intersection(p,pr,q,qs):
 
 
 def get_distance(p1,p2):
+    p1 = p1.reshape(-1,2)
+    p2 = p2.reshape(-1,2)
     dSquared = pow(p2-p1,2)
     summed = dSquared[:,0] + dSquared[:,1]
     sqrtd = np.sqrt(summed)
@@ -450,6 +502,21 @@ def get_closest_on_side(refPoint,possiblePoints,left=True):
         return possiblePoints[i]
     except ValueError as e:
         return None
-            
+
+#TODO: rename for more accuracy
+#should be radians_between_points
 def angle_between_points(a,b):
-    return atan2(b[1]-a[1],b[0]-a[0])
+    """ takes np.arrays
+        return the radian relation of b to a (source)
+        ie: if > 0: anti-clockwise, < 0: clockwise
+    """
+    c = b - a
+    return atan2(c[1],c[0])
+
+def drawText(ctx,x,y,string):
+    if not DRAW_TEXT:
+        return
+    offset = random.random() * 0.005
+    ctx.set_source_rgba(*TEXT)
+    ctx.move_to(x+offset,y+offset)
+    ctx.show_text(str(string))
