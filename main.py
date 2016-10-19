@@ -14,6 +14,7 @@ Y = pow(2,N)
 imgPath = "./imgs/"
 imgName = "initialTest"
 currentTime = time.gmtime()
+FONT_SIZE = 0.03
 #format the name of the image to be saved thusly:
 saveString = "%s%s_%s-%s-%s_%s-%s" % (imgPath,
                                           imgName,
@@ -43,7 +44,9 @@ logging.getLogger('').addHandler(console)
 surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, X,Y)
 ctx = cairo.Context(surface)
 ctx.scale(X,Y)
-    
+ctx.set_font_size(FONT_SIZE)
+
+
 #Drawing:
 draw_routines.draw(ctx,drawRoutineName,X,Y,surface=surface,filenamebase=saveString)
     
