@@ -10,6 +10,7 @@ import IPython
 import heapq
 import pickle
 from string import ascii_uppercase
+import sys
 
 from Parabola import Parabola
 from beachline import BeachLine,Left,Right,Centre,NilNode
@@ -18,12 +19,13 @@ from dcel import DCEL
 
 import logging
 
-DEBUG_INFINITE_RESOLUTION = True
+#If true, will draw each frame as infinite lines are made finite
+DEBUG_INFINITE_RESOLUTION = False
 
 #SAVE FILE:
 SAVENAME = "graph_data.pkl"
 
-#COLOURS:
+#COLOURS and RADI:
 COLOUR = [0.2,0.1,0.6,1.0]
 COLOUR_TWO = [1.0,0.2,0.4,0.5]
 SITE_COLOUR = [1,0,0,1]
@@ -38,9 +40,12 @@ BEACH_RADIUS = 0.002
 SWEEP_LINE_COLOUR = [0,0,1,1]
 LINE_WIDTH = 0.002
 #:
-BBOX = [0,0,1,1]
+BBOX = [0,0,1,1] #the bbox of the final image
+MAX_BBOX = [-200,-200,200,200] #the bbox of the quad tree space management in dcel
 
 currentStep = 0
+
+EPSILON = sys.float_info.epsilon
 
 class Voronoi(object):
     """ Creates a random selection of points, and step by step constructs
@@ -66,25 +71,27 @@ class Voronoi(object):
         #storage of breakpoint tuples -> halfedge
         self.halfEdges = {}
 
-    def complete_edges(self,surface=None,filename=None):
+    def complete_edges(self):
         """ get any infinite edges, and complete their intersections """
-        logging.info("Infinite Edges:")
+        logging.info("\n---------- Infinite Edges Completion")
         i = 0
+        #not is infinite, only actually caring about edges without a start
         i_pairs = [x for x in self.halfEdges.items() if x[1].origin is None]
-        if DEBUG_INFINITE_RESOLUTION and surface and filename:
-            saveName = "{}_edge_completion_{}".format(filename,i)
-            utils.drawDCEL(self.ctx,self.dcel)
-            utils.write_to_png(surface,saveName)
+        logging.debug("Infinite edges num: {}".format(len(i_pairs)))
+        #----
+        #i_pairs = [((breakpoint nodes),edge)]
         for ((a,b),c) in i_pairs:
             i += 1
-            #a and b are nodes 
-            logging.info("{} Infinite Edge: {}-{}".format(i,a,b))
-            if b.get_successor() is NilNode:
-                continue
+            #a and b are nodes
+            #logging.debug("All Infinite Check: {}".format(",".join([str(z.isInfinite()) for ((x,y),z) in i_pairs])))
+            logging.info("{} Infinite Edge resolution: {}-{}, infinite? {}".format(i,a,b,c.isInfinite()))
+            if not c.isInfinite():
+                logging.debug("An edge that is not infinite")
             intersection = a.value.intersect(b.value)
             if intersection is not None and intersection.shape[0] > 0:
                 newVertex = self.dcel.newVertex(intersection[0,0],intersection[0,1])
                 c.addVertex(newVertex)
+                logging.debug("After modification is infinite? : {}".format(c.isInfinite()))
                 if DEBUG_INFINITE_RESOLUTION and surface and filename:
                     saveName = "{}_edge_completion_{}".format(filename,i)
                     utils.drawDCEL(self.ctx,self.dcel)
@@ -93,15 +100,12 @@ class Voronoi(object):
                 raise Exception("No intersections detected when completing an infinite edge")
 
         
-    def constrain_complete_edges(self,bbox=[0,0,1,1]):
-        """ constrain all the edges to be in a bounding box: """
-        self.dcel.constrain_half_edges(bbox)
-        
-
     def storeEdge(self,edge,bp1,bp2):
         """ Store an incomplete edge by the 2 pairs of nodes that define the breakpoints """
-        if (bp1,bp2) in self.halfEdges:
-            raise Exception("Duplicating edges by breakpoint")
+        if (bp1,bp2) in self.halfEdges.keys():
+            raise Exception("Duplicating edge breakpoint")
+        if edge in self.halfEdges.values():
+            raise Exception("Duplicating edge store")
         self.halfEdges[(bp1,bp2)] = edge
         
     def hasEdge(self,bp1,bp2):
@@ -130,7 +134,7 @@ class Voronoi(object):
     def initGraph(self,data=None):
         """ Create a graph of initial random sites """
         logging.info("Initialising graph")
-        self.dcel = DCEL() #init the dcel
+        self.dcel = DCEL(bbox=BBOX) #init the dcel
         values = data
         #create a (n,2) array of coordinates for the sites, if no data has been loaded
         if values is None:
@@ -154,7 +158,7 @@ class Voronoi(object):
         
 
     def add_circle_event(self,loc,sourceNode,voronoiVertex,left=True):
-        if loc[1] < self.sweep_position.y() or np.allclose(loc[1],self.sweep_position.y()):
+        if loc[1] < self.sweep_position.y():# or np.allclose(loc[1],self.sweep_position.y()):
             logging.warning("Breaking out of add circle event: at/beyond sweep position")
             return
         #if True: #loc[1] > self.sweep_position[0]:
@@ -199,16 +203,25 @@ class Voronoi(object):
         return True 
 
     def finalise_DCEL(self,surface=None,filename=None):
-        logging.info("Finalising DCEL")
+        """ Cleanup the DCEl, completing faces and constraining to a bbox """ 
+        logging.info("\n\nFinalising DCEL")
         logging.info(self.dcel)
-        self.complete_edges(surface=surface,filename=filename)
-        self.constrain_complete_edges(bbox=BBOX)
-        #self.complete_faces()
-        
+        #Not a pure DCEL operation as it requires curve intersection:
+        self.complete_edges()
+        #pure DCEL operations:
+        self.dcel.purge_infinite_edges()
+        self.dcel.constrain_half_edges(bbox=BBOX)
+        self.dcel.fixup_halfedges()
         #todo: connect edges of faces together
-        logging.info(self.dcel)
+        #self.dcel.complete_faces(BBOX)
+        #logging.info(self.dcel)
         return self.dcel
-    
+
+    def complete_faces(self,dcel=None):
+        if dcel is None:
+            dcel = self.dcel
+        dcel.complete_faces(BBOX)
+        return dcel
                     
     def draw_voronoi_diagram(self,clear=True):
         """ Draw the final diagram """
@@ -383,11 +396,11 @@ class Voronoi(object):
             face_b = closest_arc_node.data['face']
         else:
             raise Exception("A Face can't be found for a node")
-        #self.dcel.newVertex(xPos,closest_arc_node.value(xPos)[0][1])
         #set the origin points to be undefined
         #link the edges with the faces associated with the sites
         logging.debug("Adding edge")
-        newEdge = self.dcel.newEdge(None,None,face=face_a,twinFace=face_b)
+        newEdge = self.dcel.newEdge(None,None,face=face_b,twinFace=face_a)
+        #newEdge = self.dcel.newEdge(None,None,face=face_a,twinFace=face_b)
 
         #if there was an edge of closest_arc -> closest_arc.successor: update it
         #because closest_arc is not adjacent to successor any more, duplicate_node is
@@ -397,7 +410,7 @@ class Voronoi(object):
             if e1:
                 self.removeEdge(closest_arc_node,dup_node_succ)
                 self.storeEdge(e1,duplicate_node,dup_node_succ)
-
+                
         
         logging.debug("Linking edge from {} to {}".format(closest_arc_node,new_node))
         self.storeEdge(newEdge,closest_arc_node,new_node)
@@ -486,7 +499,8 @@ class Voronoi(object):
             
         #create two half-edge records for the new breakpoint of the beachline
         logging.debug("Creating a new half-edge {}-{}".format(pre,suc))
-        newEdge = self.dcel.newEdge(None,newVertex,face=pre.data['face'],twinFace=suc.data['face'])
+        newEdge = self.dcel.newEdge(None,newVertex,face=suc.data['face'],twinFace=pre.data['face'])
+        #newEdge = self.dcel.newEdge(None,newVertex,face=pre.data['face'],twinFace=suc.data['face'])
 
         if e1:
             e1.setPrev(newEdge)
