@@ -7,7 +7,7 @@ import numpy as np
 import pyqtree
 import sys
 
-EPSILON = sys.float_info.epsilon * 1000
+EPSILON = sys.float_info.epsilon
 CENTRE = np.array([[0.5,0.5]])
 PI = math.pi
 TWOPI = 2 * PI
@@ -182,24 +182,27 @@ class HalfEdge:
         if self.origin is None or other.origin is None:
             raise Exception("Trying to compare against ill-formed edges")
         #logging.debug("---- Half Edge Comparision")
-        logging.debug("HELT: {} - {}".format(self.index,other.index))
+        #logging.debug("HELT: {} - {}".format(self.index,other.index))
         retValue = False 
-        centre = self.face.getCentre()
-        a = self.origin.toArray()
-        b = other.origin.toArray()
+        centre = [0,1] + (self.face.getCentre() * [1,-1])
+        a = [0,1] + (self.origin.toArray() * [1,-1])
+        b = [0,1] + (other.origin.toArray() * [1,-1])
         #logging.debug("Comp: {}, {}, {}".format(centre,a,b))
         #offsets:
         o_a = a - centre
         o_b = b - centre
-        #is clockwise?
-        if o_a[0] >= 0 and o_b[0] < 0:
-            retValue = True
-        elif o_a[0] < 0 and o_b[0] >= 0:
-            retValue = False
-        elif o_a[0] == EPSILON and o_b[0] == EPSILON and \
-           o_a[1] == EPSILON and o_b[1] == EPSILON:
-            retValue =  b[1] > a[1]
-        else:
+        # #is clockwise?
+        # if o_a[0] >= 0 and o_b[0] < 0:
+        #     retValue = True
+        # elif o_a[0] < 0 and o_b[0] >= 0:
+        #     retValue = False
+        # elif -EPSILON < o_a[0] < EPSILON and -EPSILON < o_b[0] < EPSILON: 
+        #     if (o_a[1] >= EPSILON or o_b[1] >= EPSILON):
+        #         retValue = a[1] > b[1]
+        #     else:
+        #         retValue =  b[1] > a[1]
+        # else:
+        if True:
             det = np.cross(o_a,o_b)
             if det < 0:
                 retValue = True
@@ -210,7 +213,8 @@ class HalfEdge:
                 d2 = utils.get_distance(b,centre)
                 retValue = d1 < d2
 
-        #logging.debug("Comp result: {}".format(retValue))
+        #logging.debug("CW: {}".format(retValue))
+        #invert because of inverted y axis
         return retValue
 
 
@@ -224,6 +228,7 @@ class HalfEdge:
         """
         if self.origin is None or self.twin.origin is None:
             raise Exception("Invalid line boundary test ")
+        bbox = bbox + np.array([EPSILON,EPSILON,-EPSILON,-EPSILON])
         s = self.origin.toArray()
         e = self.twin.origin.toArray()
         #logging.debug("Checking edge intersection:\n {}\n {}\n->{}\n----".format(s,e,bbox))
@@ -296,7 +301,11 @@ class HalfEdge:
         if self.origin is not None and self.twin.origin is not None:
             #angle = utils.angle_between_points(self.origin.toArray(),
             #                                   self.twin.origin.toArray())
-            cmp = not self < self.twin
+            cmp = self < self.twin
+            otherCmp = self.twin < self
+            if cmp != otherCmp:
+                logging.info("Mismatched: {}-{}".format(self.index,self.twin.index))
+                raise Exception("Mismatched orientations")
             logging.debug("CMP: {}".format(cmp))
             if cmp:
                 logging.warning("Swapping the vertices of line {} and {}".format(self.index,self.twin.index))
@@ -311,6 +320,13 @@ class HalfEdge:
                 #re-register
                 self.twin.origin.registerHalfEdge(self.twin)
                 self.origin.registerHalfEdge(self)
+
+                reCheck = self < self.twin
+                reCheck_opposite = self.twin < self
+                if reCheck or reCheck_opposite:
+                    logging.warn("Re-Orientation failed")
+                    raise Exception("Re-Orientation failed")
+                
             self.fixed = True
             self.twin.fixed = True
 
@@ -368,6 +384,8 @@ class Face(object):
     def get_bbox(self):
         vertexPairs = [x.getVertices() for x in self.edgeList]
         vertexArrays = [(x.toArray(),y.toArray()) for x,y in vertexPairs if x is not None and y is not None]
+        if len(vertexArrays) == 0:
+            return np.array([[0,0],[0,0]])
         allVertices = np.array([x for (x,y) in vertexArrays for x in (x,y)])
         bbox = np.array([[allVertices[:,0].min(), allVertices[:,1].min()],
                          [allVertices[:,0].max(), allVertices[:,1].max()]])
@@ -396,7 +414,7 @@ class Face(object):
         """ Order the edges anti-clockwise, by starting point """
         logging.debug("Sorting edges")
         self.edgeList = sorted(self.edgeList)
-        #self.edgeList.reverse()
+        self.edgeList.reverse()
         logging.debug("Sorted edges: {}".format([str(x.index) for x in self.edgeList])) 
         
         
@@ -520,8 +538,8 @@ class DCEL(object):
         """ For each halfedge, shorten it to be within the bounding box  """
         logging.debug("\n---------- Constraint Checking")
         numEdges = len(self.halfEdges)
-        for i,e in enumerate(self.halfEdges):
-            logging.debug("\n---- Checking constraint for: {}/{} {}".format(i,numEdges,e))
+        for e in self.halfEdges:
+            logging.debug("\n---- Checking constraint for: {}/{} {}".format(e.index,numEdges,e))
             #if both vertices are within the bounding box, don't touch
             if e.isConstrained():
                 continue
@@ -541,7 +559,6 @@ class DCEL(object):
                 v2 = self.newVertex(newBounds[1][0],newBounds[1][1])
                 #if not (v1.eq(orig_1) or v1.eq(orig_2) or v2.eq(orig_1) or v2.eq(orig_2)):
                 if not (v1 == orig_1 or v1 == orig_2 or v2 == orig_1 or v2 == orig_2):
-                    IPython.embed()
                     logging.debug("Vertex Changes upon constraint:")
                     logging.debug(" Originally: {}, {}".format(orig_1,orig_2))
                     logging.debug(" New: {}, {}".format(v1,v2))
@@ -592,6 +609,7 @@ class DCEL(object):
             #sort edges going anti-clockwise
             f.sort_edges()
             edgeList = f.getEdges().copy()
+            #reverse to allow popping off
             edgeList.reverse()
             first_edge = edgeList[-1]
             while len(edgeList) > 1:
@@ -606,9 +624,8 @@ class DCEL(object):
                     intersect_2 = nextEdge.intersects_edge(bbox)
                     logging.debug("Intersect Values: {} {}".format(intersect_1,intersect_2))
                     if intersect_1 is None or intersect_2 is None:
-                        logging.debug("Skipping non-matching lines")
-                        continue
-                    if intersect_1 == intersect_2:
+                        logging.debug("Non- side intersecting lines")
+                    if intersect_1 == intersect_2 or intersect_1 is None or intersect_2 is None:
                         logging.debug("Intersects match, creating a simple edge between: {}={}".format(current_edge.index,nextEdge.index))
                         #connect together with simple edge
                         newEdge = self.newEdge(current_edge.twin.origin,nextEdge.origin,face=f,prev=current_edge)
@@ -683,17 +700,19 @@ class DCEL(object):
     def verify_edges(self):
         #make sure every halfedge is only used once
         logging.info("Verifying edges")
+        troublesomeEdges = [] #for debugging
         usedEdges = {}
         for f in self.faces:
             for e in f.edgeList:
                 if e.isInfinite():
                     raise Exception("Edge {} is infinite when it shouldn't be".format(e.index))
-                if not e < e.twin:
-                    logging.warning("Edge {} is not anti-clockwise".format(e.index))
+                if e < e.twin:
+                    raise Exception("Edge {} is not anti-clockwise".format(e.index))
                     #raise Exception("Edge {} is not anti clockwise".format(e.index))
                 if e.index not in usedEdges:
                     usedEdges[e.index] = f.index
                 else:
                     raise Exception("Edge {} in {} already used in {}".format(e.index,f.index,usedEdges[e.index]))
         logging.info("Edges verified")
+        return troublesomeEdges
         
