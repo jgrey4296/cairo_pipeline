@@ -40,8 +40,8 @@ BEACH_RADIUS = 0.002
 SWEEP_LINE_COLOUR = [0,0,1,1]
 LINE_WIDTH = 0.002
 #:
-BBOX = [0,0,1,1] #the bbox of the final image
-MAX_BBOX = [-200,-200,200,200] #the bbox of the quad tree space management in dcel
+BBOX = np.array([0,0,1,1]) #the bbox of the final image
+#MAX_BBOX = [-200,-200,200,200] #the bbox of the quad tree space management in dcel
 
 currentStep = 0
 
@@ -229,15 +229,11 @@ class Voronoi(object):
         if clear:
             utils.clear_canvas(self.ctx)
         self.ctx.set_source_rgba(*COLOUR)
-        
         #draw sites
         for site in self.sites:
             utils.drawCircle(self.ctx,*site.loc,0.007)
-        
         #draw faces
         utils.drawDCEL(self.ctx,self.dcel)                       
-        
-        #draw edge vertices
 
         
     def update_arcs(self,d):
@@ -252,6 +248,7 @@ class Voronoi(object):
         self.draw_beach_line_components()
         self.draw_sweep_line()
         self.draw_circle_events()
+        utils.drawDCEL(self.ctx,self.dcel)
         
     def draw_sites(self):
         self.ctx.set_source_rgba(*SITE_COLOUR)
