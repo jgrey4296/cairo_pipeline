@@ -20,35 +20,39 @@ from branches import Branches
 from voronoi import Voronoi
 from voronoiexperiments import VExperiment
 
-#constants:
-FACE_DRAW_LIMIT = 12
-EDGE_DRAW_LIMIT = 50
-
+#DEBUG Stages and amounts
 DRAW_INTERMEDIATE = False
-DRAW_FACES = True
 PRE_DRAW_EDGES = False
-DRAW_EDGES = False
+PRE_DRAW_FACES = False
+DRAW_EDGES = True
+DRAW_FACES = False
+FACE_DRAW_LIMIT = 12
+EDGE_DRAW_LIMIT = 100
+FACE_CENTRING = False
+
+#Globals and constants:
 PIX = 1/pow(2,10)
 op = None
 cairo_surface = None
 cairo_context = None
 filename = None
+numOfElements = 10
+iterationNum = 10
+branchIterations = 100
+voronoi_nodes = 20
+
+#Processing types:
+granulate = True
+interpolateGranules = False
+interpolate = True
+interpolateGrains = False
+
 #instances of drawing classes
 drawInstance = None
 branchInstance = None
 voronoiInstance = None
 vexpInstance = None
 
-numOfElements = 10
-iterationNum = 10
-granulate = True
-interpolateGranules = False
-interpolate = True
-interpolateGrains = False
-
-branchIterations = 100
-
-voronoi_nodes = 10
 
 
 #top level draw command:
@@ -196,7 +200,6 @@ def drawVoronoi(X_size,Y_size):
         #Debug intermediate images:
         if DRAW_INTERMEDIATE:
             voronoiInstance.draw_intermediate_states()
-            voronoiInstance.draw_voronoi_diagram(clear=False)
             utils.write_to_png(cairo_surface,filename,i)
 
         #rough infinite loop guard
@@ -219,30 +222,30 @@ def drawVoronoi(X_size,Y_size):
             e.drawn = True
             #e.twin.drawn = True
 
-    
-    
     #calculations finished, Do the first half of finalising
     #complete, then purge, edges
     dcel = voronoiInstance.finalise_DCEL(surface=cairo_surface,filename=filename)
 
-    dcel.verify_edges()
-    
-    #IPython.embed()
+    #debug edges that fail verification    
+    troublesomeEdges = dcel.verify_edges()
+    utils.clear_canvas(voronoiInstance.ctx)
+    if len(troublesomeEdges) > 0:
+        for e in troublesomeEdges:
+            utils.draw_dcel_halfEdge(voronoiInstance.ctx,e,clear=False)
+        utils.write_to_png(cairo_surface,"{}_TROUBLESOME_EDGES".format(filename))
+        IPython.embed()
 
     #Draw each face individually
-    if DRAW_FACES:
+    if PRE_DRAW_FACES:
         logging.info("DRAWING FACES")
         for f in dcel.faces:
             if f.index > FACE_DRAW_LIMIT:
                 break;
             logging.info("Drawing face: {}".format(f.index))
             faceName = "{}_face_{}".format(filename,f.index)
-            utils.draw_dcel_single_face(voronoiInstance.ctx,dcel,f,clear=True)
+            utils.draw_dcel_single_face(voronoiInstance.ctx,dcel,f,clear=True,force_centre=FACE_CENTRING)
             utils.write_to_png(cairo_surface,faceName)
 
-
-    #IPython.embed()
-            
     dcel = voronoiInstance.complete_faces()
 
     if DRAW_EDGES:
@@ -267,7 +270,7 @@ def drawVoronoi(X_size,Y_size):
                 break;
             logging.info("Drawing face post completion: {}".format(f.index))
             faceName = "{}_face_pc_{}".format(filename,f.index)
-            utils.draw_dcel_single_face(voronoiInstance.ctx,dcel,f,clear=True)
+            utils.draw_dcel_single_face(voronoiInstance.ctx,dcel,f,clear=True,force_centre=FACE_CENTRING)
             utils.write_to_png(cairo_surface,faceName)
     
 
