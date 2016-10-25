@@ -73,10 +73,12 @@ def draw_dcel_faces(ctx,dcel):
     for f in dcel.faces:
         draw_dcel_single_face(ctx,dcel,f,clear=False)
 
-def draw_dcel_single_face(ctx,dcel,face,clear=True):
+def draw_dcel_single_face(ctx,dcel,face,clear=True,force_centre=False):
     if clear:
         clear_canvas(ctx)
-        #then centre the face:
+    if len(face.edgeList) < 2 :
+        return
+    if force_centre:
         centre = face.getCentre()
         invCentre = -centre
         ctx.translate(*invCentre)
@@ -102,7 +104,7 @@ def draw_dcel_single_face(ctx,dcel,face,clear=True):
             ctx.set_source_rgba(*END)
             drawCircle(ctx,v2.x+0.005,v2.y,startRadius)
             startRadius = 0.005
-    if clear:
+    if force_centre:
         ctx.translate(-0.5,-0.5)
         ctx.translate(*centre)
 
@@ -110,7 +112,7 @@ def draw_dcel_single_face(ctx,dcel,face,clear=True):
         
 def draw_dcel_edges(ctx,dcel):
     drawnEdges = []
-    ctx.set_line_width(0.002)
+    ctx.set_line_width(0.004)
     for e in dcel.halfEdges:
         i = e.index
         #only draw if the end hasnt been drawn yet:
@@ -150,7 +152,12 @@ def draw_dcel_halfEdge(ctx,halfEdge,clear=True):
         drawCircle(ctx,v1.x,v1.y,0.01)
         ctx.set_source_rgba(*END)
         drawCircle(ctx,v2.x,v2.y,0.01)
-        drawText(ctx,*centre,"HE: {}".format(halfEdge.index))
+
+        if halfEdge.face is not None:
+            centre = halfEdge.face.getCentre()
+            drawText(ctx,*centre,"F:{}.{}".format(halfEdge.face.index,halfEdge.index))
+        else:
+            drawText(ctx,*centre,"HE: {}".format(halfEdge.index))
             
 def draw_dcel_vertices(ctx,dcel):
     """ Draw all the vertices in a dcel as dots """
