@@ -118,14 +118,16 @@ class Line:
             return np.row_stack((self.source,self.destination()))
     
     @staticmethod
-    def newLine(a,b):
+    def newLine(a,b,bbox):
         """ Create a new line from two vertices """
         #Calculate the line parameters:
         swapped = False
         d_a = utils.get_distance(np.array([[a.x,a.y]]),CENTRE)
         d_b = utils.get_distance(np.array([[b.x,b.y]]),CENTRE)
-        if d_b < d_a:
-            logging.debug("Swapping vertices for line creation")
+        aInBBox = a.within(bbox)
+        bInBBox = b.within(bbox)
+        if d_b < d_a and bInBBox:
+            logging.debug("Swapping vertices for line creation, source is now: {}".format(b))
             temp = a
             a = b
             b = temp
@@ -261,6 +263,10 @@ class HalfEdge:
         self.twin.constrained = True
         
     def within(self,bbox):
+        """ Check that both points in an edge are within the bbox """
+        if self.index == 62 or self.index == 63:
+            logging.info("Debugging Edge: {} : {}".format(self.index,self))
+            logging.info("Within result: {}".format(self.origin.within(bbox) and self.twin.origin.within(bbox)))
         return self.origin.within(bbox) and self.twin.origin.within(bbox)
 
     def outside(self,bbox):
@@ -277,7 +283,7 @@ class HalfEdge:
 
         #Convert to an actual line representation, for intersection
         logging.info("Constraining {} - {}".format(self.index,self.twin.index))
-        asLine = Line.newLine(self.origin,self.twin.origin)
+        asLine = Line.newLine(self.origin,self.twin.origin,bbox)
         asLine.constrain(*bbox)
         return asLine.bounds()
         
