@@ -178,44 +178,50 @@ class HalfEdge:
         """
             Comparison of the origin and other.origin, from ciamej's stack overflow answer
             sorts clockwise relative to the centre of the face
+            from: stackoverflow.com/questions/6989100
         """
         if not isinstance(other,HalfEdge):
             raise Exception("Trying to sort a Halfedge with something else")
         if self.origin is None or other.origin is None:
             raise Exception("Trying to compare against ill-formed edges")
-        #logging.debug("---- Half Edge Comparision")
-        #logging.debug("HELT: {} - {}".format(self.index,other.index))
-        retValue = False 
+        logging.debug("---- Half Edge Comparision")
+        logging.debug("HELT: {} - {}".format(self.index,other.index))
+        retValue = False
+        #flip y axis for ease
         centre = [0,1] + (self.face.getCentre() * [1,-1])
         a = [0,1] + (self.origin.toArray() * [1,-1])
         b = [0,1] + (other.origin.toArray() * [1,-1])
-        #logging.debug("Comp: {}, {}, {}".format(centre,a,b))
+        logging.debug("Comp: {}, {}, {}".format(centre,a,b))
         #offsets:
         o_a = a - centre
         o_b = b - centre
-        # #is clockwise?
+        #this, while in the SO answer, does not seem sufficient:
         # if o_a[0] >= 0 and o_b[0] < 0:
         #     retValue = True
         # elif o_a[0] < 0 and o_b[0] >= 0:
         #     retValue = False
-        # elif -EPSILON < o_a[0] < EPSILON and -EPSILON < o_b[0] < EPSILON: 
-        #     if (o_a[1] >= EPSILON or o_b[1] >= EPSILON):
+        # elif np.allclose([o_a[0],o_b[0]],0):
+        #     logging.debug("On same horizontal line")
+        #     if o_a[1] >= 0 or o_b[1] >= 0:
         #         retValue = a[1] > b[1]
         #     else:
-        #         retValue =  b[1] > a[1]
-        # else:
+        #         retValue = b[1] > a[1]
+        #As such, only use the full cross product calculation
         if True:
             det = np.cross(o_a,o_b)
+            logging.debug("Det Value: {}".format(det))
             if det < 0:
                 retValue = True
             elif det > 0:
                 retValue = False
             else:
-                d1 = utils.get_distance(a,centre)
-                d2 = utils.get_distance(b,centre)
-                retValue = d1 < d2
+                logging.debug("Comparing by distance to face centre")
+                d1 = utils.get_distance(o_a,centre)
+                d2 = utils.get_distance(o_b,centre)
+                logging.debug("D1: {} \n D2: {}".format(d1,d2))
+                retValue = (d1 < d2)[0]
 
-        #logging.debug("CW: {}".format(retValue))
+        logging.debug("CW: {}".format(retValue))
         #invert because of inverted y axis
         return retValue
 
@@ -264,9 +270,6 @@ class HalfEdge:
         
     def within(self,bbox):
         """ Check that both points in an edge are within the bbox """
-        if self.index == 62 or self.index == 63:
-            logging.info("Debugging Edge: {} : {}".format(self.index,self))
-            logging.info("Within result: {}".format(self.origin.within(bbox) and self.twin.origin.within(bbox)))
         return self.origin.within(bbox) and self.twin.origin.within(bbox)
 
     def outside(self,bbox):
@@ -309,8 +312,10 @@ class HalfEdge:
             #                                   self.twin.origin.toArray())
             cmp = self < self.twin
             otherCmp = self.twin < self
+            logging.debug("Cmp Pair: {} - {}".format(cmp,otherCmp))
             if cmp != otherCmp:
-                logging.info("Mismatched: {}-{}".format(self.index,self.twin.index))
+                logging.info("Mismatched Indices: {}-{}".format(self.index,self.twin.index))
+                logging.info("Mismatched: {} - {}".format(self,self.twin))
                 raise Exception("Mismatched orientations")
             logging.debug("CMP: {}".format(cmp))
             if cmp:
