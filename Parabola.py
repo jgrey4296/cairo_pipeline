@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 import IPython
 
 from Quadratic import Quadratic as Q
@@ -63,13 +64,16 @@ class Parabola(object):
             p2.update_d(d)
         #degenerate cases:
         if self.vertical_line:
+            logging.debug("Intersecting vertical line")
             return np.array([p2(self.fx)[0]])
         if p2.vertical_line:
+            logging.debug("Intersecting other vertical line")
             return np.array([self(p2.fx)[0]])
         #normal:
         q1 = Q(self.sa,self.sb,self.sc)
         q2 = Q(p2.sa,p2.sb,p2.sc)
         xs = q1.intersect(q2)
+        logging.debug("Resulting intersects: {}".format(xs))
         xys = self(xs)
         return xys
         

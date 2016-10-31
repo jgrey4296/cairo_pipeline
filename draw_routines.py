@@ -24,11 +24,11 @@ from voronoiexperiments import VExperiment
 DRAW_INTERMEDIATE = False
 PRE_DRAW_EDGES = False
 PRE_DRAW_FACES = False
-DRAW_EDGES = True
-DRAW_FACES = False
+DRAW_EDGES = False
+DRAW_FACES = True
 FACE_DRAW_LIMIT = 12
 EDGE_DRAW_LIMIT = 100
-FACE_CENTRING = False
+FACE_CENTRING = True
 
 #Globals and constants:
 PIX = 1/pow(2,10)
