@@ -354,22 +354,30 @@ class Node(object):
             if pred != NilNode:
                 pred_intersect = self.value.intersect(pred.value)
                 logging.debug("Pred intersect result: {}".format(pred_intersect))
-                if len(pred_intersect) > 0:
-                    the_range[0] = pred_intersect[1,0]
+                shape = pred_intersect.shape
+                if shape[0] > 0:
+                    if len(shape) == 1:
+                        the_range[0] = pred_intersect[0]
+                    else:
+                        the_range[0] = pred_intersect[-1,0]
                     
             
             if succ != NilNode:
                 succ_intersect = succ.value.intersect(self.value)
                 logging.debug("Succ intersect result: {}".format(succ_intersect))
-                if len(succ_intersect) > 0:
-                    the_range[1] = succ_intersect[1,0]
+                shape = succ_intersect.shape
+                if shape[0] > 0:
+                    if len(shape) == 1:
+                        the_range[1] = pred_intersect[0]
+                    else:
+                        the_range[1] = succ_intersect[-1,0]
 
         logging.debug("Testing: {} < {} < {}".format(the_range[0],x,the_range[1]))
         if the_range[0] < x and x <= the_range[1]:
             return Centre()
-        elif x < the_range[0]:
+        elif x <= the_range[0]:
             return Left()
-        elif the_range[1] < x:
+        elif the_range[1] <= x:
             return Right()
         else:
             raise Exception("Comparison failure")
