@@ -146,11 +146,16 @@ class Voronoi(object):
                     values = np.row_stack((values,newSite))
 
         #create the site events:
+        usedCoords = []
         for site in values:
+            if (site[0],site[1]) in usedCoords:
+                logging.warn("Skipping: {}".format(site))
+                continue
             futureFace = self.dcel.newFace()
             event = SiteEvent(site,face=futureFace)
             heapq.heappush(self.events,event)
             self.sites.append(event)
+            usedCoords.append((site[0],site[1]))
         
         #Create beachline
         self.beachline = BeachLine()
