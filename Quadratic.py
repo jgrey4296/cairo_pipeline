@@ -1,5 +1,6 @@
 from math import sqrt, trunc
 import numpy as np
+import logging
 import IPython
 
 class Quadratic(object):
@@ -38,9 +39,9 @@ class Quadratic(object):
         if D < 0:
             returnVal = [None,None]
         elif np.allclose(D,0) or np.allclose(self.a,0):
-            print('Only one intersection')
+            logging.debug('Only one intersection')
             #using mullers method:
-            twoc = - 2 * self.c
+            twoc = -2 * self.c
             sqrtb4ac = sqrt(pow(self.b,2) - (4 * self.a * self.c))
             pos = self.b + sqrtb4ac
             neg = self.b - sqrtb4ac
@@ -49,7 +50,7 @@ class Quadratic(object):
             elif neg != 0:
                 x = twoc / neg
             else:
-                print("Not even one intersection")
+                logging.debug("Not even one intersection")
                 x = None
             returnVal = [x,None]
         else:
