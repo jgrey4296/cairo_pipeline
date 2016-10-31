@@ -21,10 +21,10 @@ from voronoi import Voronoi
 from voronoiexperiments import VExperiment
 
 #DEBUG Stages and amounts
-DRAW_INTERMEDIATE = False
-PRE_DRAW_EDGES = False
-PRE_DRAW_FACES = False
-DRAW_EDGES = False
+DRAW_INTERMEDIATE = True
+PRE_DRAW_EDGES = True
+PRE_DRAW_FACES = True
+DRAW_EDGES = True
 DRAW_FACES = True
 FACE_DRAW_LIMIT = 12
 EDGE_DRAW_LIMIT = 100
