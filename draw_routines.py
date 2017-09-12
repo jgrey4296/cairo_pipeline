@@ -17,18 +17,6 @@ from random import choice
 #Drawing classes
 from ssClass import SandSpline
 from branches import Branches
-from voronoi import Voronoi
-from voronoiexperiments import VExperiment
-
-#DEBUG Stages and amounts
-DRAW_INTERMEDIATE = True
-PRE_DRAW_EDGES = True
-PRE_DRAW_FACES = True
-DRAW_EDGES = True
-DRAW_FACES = True
-FACE_DRAW_LIMIT = 12
-EDGE_DRAW_LIMIT = 100
-FACE_CENTRING = True
 
 #Globals and constants:
 PIX = 1/pow(2,10)
@@ -39,7 +27,6 @@ filename = None
 numOfElements = 10
 iterationNum = 10
 branchIterations = 100
-voronoi_nodes = 20
 
 #Processing types:
 granulate = True
@@ -50,8 +37,6 @@ interpolateGrains = False
 #instances of drawing classes
 drawInstance = None
 branchInstance = None
-voronoiInstance = None
-vexpInstance = None
 
 
 
@@ -75,8 +60,6 @@ def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render")
     #setup the draw instances
     drawInstance = SandSpline(ctx,(X_size,Y_size))
     branchInstance = Branches(ctx,(X_size,Y_size))
-    voronoiInstance = Voronoi(ctx,(X_size,Y_size),voronoi_nodes)
-    vexpInstance = VExperiment(ctx,(X_size,Y_size),voronoi_nodes)
     #ctx.set_operator(OPERATOR_SOURCE)
     utils.clear_canvas(ctx)
 
@@ -98,10 +81,6 @@ def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render")
         iterateAndDraw()
     elif drawOption == "branch":
         drawBranch(X_size,Y_size)
-    elif drawOption == "voronoi":
-        drawVoronoi(X_size,Y_size)
-    elif drawOption == "vexp":
-        drawVExp(X_size,Y_size)
     elif drawOption == "textTest":
         drawTextTest(X_size,Y_size)
     else:
@@ -113,7 +92,7 @@ def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render")
 def iterateAndDraw():
     """ Run transforms repeatedly on non-voronoi drawing classes """
     for i in range(iterationNum):
-        logging.info('step:',i)
+        logging.info('step: {}'.format(i))
         drawInstance.step(granulate,interpolateGranules)
     
     drawInstance.draw(interpolate,interpolateGrains)
@@ -122,13 +101,13 @@ def iterateAndDraw():
 def initCircles():
     """ Add a number of circles to the drawing instance, ready for deformation """
     for i in range(numOfElements):
-        logging.info('adding circle:',i)
+        logging.info('adding circle: {}'.format(i))
         drawInstance.addCircle()
 
 def initLines():
     """ Add a number of lines to the drawing instance, ready for deformation """
     for i in range(numOfElements):
-        logging.info('adding line:',i)
+        logging.info('adding line:'.format(i))
         line = [x for x in random(4)]
         drawInstance.addLine(*line)
 
@@ -157,132 +136,10 @@ def drawBranch(X_size,Y_size):
     """ Incomplete, intended to draw trees  """
     branchInstance.addBranch()
     for i in np.arange(branchIterations):
-        logging.info('Branch Growth:',i)
+        logging.info('Branch Growth: {}'.format(i))
         branchInstance.grow(i)
     branchInstance.draw()
 
-#----------
-# VORONOI:
-#----------
-def drawVoronoi(X_size,Y_size):
-    """ Step through the construction of a voronoi diagram """
-    i = 0
-    result = True
-    siteLocations = None
-    loaded = False
-    try: #try to load a saved set of points
-        siteLocations = voronoiInstance.load_graph()
-        loaded = True
-    except Exception as e:
-        logging.warn("Using Default Locations")
-    #setup the points internally
-    siteLocations = voronoiInstance.initGraph(data=siteLocations)
-    #Save the points for reuse
-    if not loaded:
-        voronoiInstance.save_graph(siteLocations)
-        
-    #Draw the starting set of points    
-    voronoiInstance.draw_intermediate_states()
-    utils.write_to_png(cairo_surface,filename,i)
-    
-    while result:
-        i += 1
-        logging.info("\n---------- Calculating step {}".format(i))
-        logging.info(voronoiInstance.beachline)
-        
-        #The main algorithm step:
-        result = voronoiInstance.calculate(i)
-        
-        logging.info("----- Beachline Modifications:")
-        logging.info(voronoiInstance.beachline)
-        logging.info("----")
-
-        #Debug intermediate images:
-        if DRAW_INTERMEDIATE:
-            voronoiInstance.draw_intermediate_states()
-            utils.write_to_png(cairo_surface,filename,i)
-
-        #rough infinite loop guard
-        if i > 150:
-            raise Exception('Voronoi has run too long')
-
-    logging.info("-------------------- Finalising")
-
-    if PRE_DRAW_EDGES:
-        logging.info("DRAWING PRE_EDGES")
-        for e in voronoiInstance.dcel.halfEdges:
-            if e.index > EDGE_DRAW_LIMIT:
-                break;
-            if e.drawn:
-                continue
-            logging.info("Drawing edge: {}".format(e.index))
-            edgeName = "{}_edge_pre_{}".format(filename,e.index)
-            utils.draw_dcel_halfEdge(voronoiInstance.ctx,e)
-            utils.write_to_png(cairo_surface,edgeName)
-            e.drawn = True
-            #e.twin.drawn = True
-
-    #calculations finished, Do the first half of finalising
-    #complete, then purge, edges
-    dcel = voronoiInstance.finalise_DCEL(surface=cairo_surface,filename=filename)
-
-    #debug edges that fail verification    
-    troublesomeEdges = dcel.verify_edges()
-    utils.clear_canvas(voronoiInstance.ctx)
-    if len(troublesomeEdges) > 0:
-        for e in troublesomeEdges:
-            utils.draw_dcel_halfEdge(voronoiInstance.ctx,e,clear=False)
-        utils.write_to_png(cairo_surface,"{}_TROUBLESOME_EDGES".format(filename))
-        IPython.embed()
-
-    #Draw each face individually
-    if PRE_DRAW_FACES:
-        logging.info("DRAWING FACES")
-        for f in dcel.faces:
-            if f.index > FACE_DRAW_LIMIT:
-                break;
-            logging.info("Drawing face: {}".format(f.index))
-            faceName = "{}_face_{}".format(filename,f.index)
-            utils.draw_dcel_single_face(voronoiInstance.ctx,dcel,f,clear=True,force_centre=FACE_CENTRING)
-            utils.write_to_png(cairo_surface,faceName)
-
-    dcel = voronoiInstance.complete_faces()
-
-    if DRAW_EDGES:
-        logging.info("DRAWING POST EDGES")
-        for e in dcel.halfEdges:
-            if e.index > EDGE_DRAW_LIMIT:
-                break;
-            #if e.drawn:
-            #    continue
-            logging.info("Drawing edge: {}".format(e.index))
-            edgeName = "{}_edge_{}".format(filename,e.index)
-            utils.draw_dcel_halfEdge(voronoiInstance.ctx,e)
-            utils.write_to_png(cairo_surface,edgeName)
-            e.drawn = True
-            #e.twin.drawn = True
-    
-    #Draw each face individually
-    if DRAW_FACES:
-        logging.info("DRAWING POST-FACES")
-        for f in dcel.faces:
-            if f.index > EDGE_DRAW_LIMIT:
-                break;
-            logging.info("Drawing face post completion: {}".format(f.index))
-            faceName = "{}_face_pc_{}".format(filename,f.index)
-            utils.draw_dcel_single_face(voronoiInstance.ctx,dcel,f,clear=True,force_centre=FACE_CENTRING)
-            utils.write_to_png(cairo_surface,faceName)
-    
-
-
-
-    voronoiInstance.draw_voronoi_diagram()
-    finalFilename = "{}-FINAL".format(filename)
-    utils.write_to_png(cairo_surface,finalFilename,i+1)
-
-def drawVExp(X_size,Y_size):
-    vexpInstance.drawTest()
-    
 def drawTextTest(x,y):
     cairo_context.set_font_size(0.025)
     cairo_context.set_source_rgba(*[0,1,1,1])

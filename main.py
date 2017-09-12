@@ -16,13 +16,13 @@ imgName = "initialTest"
 currentTime = time.gmtime()
 FONT_SIZE = 0.03
 #format the name of the image to be saved thusly:
-saveString = "%s%s_%s-%s-%s_%s-%s" % (imgPath,
-                                          imgName,
-                                          currentTime.tm_min,
-                                          currentTime.tm_hour,
-                                          currentTime.tm_mday,
-                                          currentTime.tm_mon,
-                                          currentTime.tm_year)
+saveString = "{}{}_{}-{}_{}-{}".format(imgPath,
+                                       imgName,
+                                       currentTime.tm_min,
+                                       currentTime.tm_hour,
+                                       currentTime.tm_mday,
+                                       currentTime.tm_mon,
+                                       currentTime.tm_year)
 
 
 #get the type of drawing to do from the command line argument:
@@ -33,7 +33,7 @@ else:
 
 #setup logging:
 LOGLEVEL = logging.DEBUG
-logFileName = drawRoutineName + ".log"
+logFileName = "log.{}".format(drawRoutineName)
 logging.basicConfig(filename=logFileName,level=LOGLEVEL,filemode='w')
 
 console = logging.StreamHandler()
@@ -49,8 +49,5 @@ ctx.set_font_size(FONT_SIZE)
 
 #Drawing:
 draw_routines.draw(ctx,drawRoutineName,X,Y,surface=surface,filenamebase=saveString)
-    
-# #write to file: - DEPRECATED: moved into draw routines
-# print('Saving')
-# surface.write_to_png (saveString)
+
 
