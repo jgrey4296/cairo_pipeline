@@ -60,7 +60,7 @@ class SandSpline(object):
         #combin into a single matrix of size (n,2)
         line = np.column_stack((lineX,lineY))
         #smooth the points
-        i2_line = utils._interpolate(line,self.interpolationPoints,smoothing=self.smooth)
+        i2_line = utils.math._interpolate(line,self.interpolationPoints,smoothing=self.smooth)
         initialNoise = np.zeros((sampleSize,1),'float')
         self.snums.append(sampleSize)
         #store the original points, the interpolated points, and the initial noise amount
@@ -99,7 +99,7 @@ class SandSpline(object):
         yPoints = y + np.sin(randPoints) * (rLower + random(1) * rHigher)
         #combine together:
         circlePoints = np.column_stack((xPoints,yPoints))
-        interpolatedPoints = utils._interpolate(circlePoints,self.interpolationPoints,smoothing=self.smooth)
+        interpolatedPoints = utils.math._interpolate(circlePoints,self.interpolationPoints,smoothing=self.smooth)
         initialNoise = np.zeros((sampleSize,1),'float')
         #store the generated info:
         self.snums.append(sampleSize)
@@ -122,7 +122,7 @@ class SandSpline(object):
             if interpolate:
                 #further interpolate the points:
                 print('interpolating',i,' of ', lxys)
-                points = utils._interpolate(points,self.interpolationPoints, smoothing=self.smooth)
+                points = utils.math._interpolate(points,self.interpolationPoints, smoothing=self.smooth)
                         
             for x,y in points:
                 #draw each point as a circle:
@@ -171,7 +171,7 @@ class SandSpline(object):
             #copy the points back into the main data store
             xyList[:,:] = points
             #add in the varied points after interpolating
-            self.i_xys.append(utils._interpolate(xyList,self.interpolationPoints,smoothing=self.smooth))
+            self.i_xys.append(utils.math._interpolate(xyList,self.interpolationPoints,smoothing=self.smooth))
 
             
         
