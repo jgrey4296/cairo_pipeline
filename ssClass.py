@@ -1,20 +1,20 @@
 import numpy as np
 from numpy.random import random
-import utils
+import cairo_utils as utils
 import IPython
 
 TWOPI = np.pi*2
 HPI = np.pi * 0.5
 sampleRange = [10,200]
-radiusRange = [0.2,0.25]
+radiusRange = [0.2,0.35]
 interpolationPoints = 3000
-p_r = 0.0005 #an individual point radius
-noiseAmnt = 0.1
-grains = 20
-grainMult = 1.3
-smooth = 0.00
-ALPHA = 0.05
-rMod = 1
+p_r = 0.0004 #an individual point radius
+noiseAmnt = 0.9
+grains = 40
+grainMult = 1.2
+smooth = 0.9
+ALPHA = 0.09
+rMod = 1.3
 
 #replicating inconvergents sand spline
 class SandSpline(object):

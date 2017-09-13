@@ -2,7 +2,7 @@ import numpy as np
 from numpy.random import random
 from math import pi, sin, cos
 import pyqtree
-import utils
+import cairo_utils as utils
 import IPython
 
 #note to remember:

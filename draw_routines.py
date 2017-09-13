@@ -2,16 +2,11 @@ import math
 import cairo
 from cairo import OPERATOR_SOURCE
 import numpy as np
-from numpy import pi
-from numpy import linspace
-from numpy import cos
-from numpy import sin
+from numpy import pi, linspace, cos, sin
 from numpy.random import random
-from scipy.interpolate import splprep
-from scipy.interpolate import splev
-import utils
+from scipy.interpolate import splprep, splev
+import cairo_utils as utils
 import IPython
-import utils
 import logging
 from random import choice
 #Drawing classes
@@ -32,7 +27,7 @@ branchIterations = 100
 granulate = True
 interpolateGranules = False
 interpolate = True
-interpolateGrains = False
+interpolateGrains = True
 
 #instances of drawing classes
 drawInstance = None

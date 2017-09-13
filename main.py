@@ -1,5 +1,4 @@
 #!/users/jgrey/anaconda/bin/python
-
 import sys
 import time
 import math
