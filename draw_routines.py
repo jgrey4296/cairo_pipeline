@@ -56,7 +56,7 @@ def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render")
     drawInstance = SandSpline(ctx,(X_size,Y_size))
     branchInstance = Branches(ctx,(X_size,Y_size))
     #ctx.set_operator(OPERATOR_SOURCE)
-    utils.clear_canvas(ctx)
+    utils.drawing.clear_canvas(ctx)
 
     #Initialise the base image:
     if drawOption == 'circles':
@@ -82,7 +82,7 @@ def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render")
         raise Exception("Unrecognized draw routine",drawOption)
 
     if surface:
-        utils.write_to_png(surface,filenamebase)
+        utils.drawing.write_to_png(surface,filenamebase)
     
 def iterateAndDraw():
     """ Run transforms repeatedly on non-voronoi drawing classes """
@@ -140,13 +140,13 @@ def drawTextTest(x,y):
     cairo_context.set_source_rgba(*[0,1,1,1])
     cairo_context.move_to(0.2,0.5)
     cairo_context.show_text("hello")
-    utils.write_to_png(cairo_surface,"text_test")                  
+    utils.drawing.write_to_png(cairo_surface,"text_test")                  
 
     
 def example_multi_render(Xs,Ys):
     for i in range(1000):
         #do something
         if i%10:
-            utils.write_to_png(surface,filename,i=i)
+            utils.drawing.write_to_png(surface,filename,i=i)
 
             

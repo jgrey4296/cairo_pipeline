@@ -72,7 +72,7 @@ class SandSpline(object):
         sampleSize = (self.sampleRange[0] + (random(1) * self.sampleRange[1])).astype('int')[0]
         #create the bezier line
         line = utils.bezier1cp(*start,*cp1,*end,sampleSize)
-        i2_line = utils._interpolate(line,self.interpolationPoints,smoothing=self.smooth)
+        i2_line = utils.math._interpolate(line,self.interpolationPoints,smoothing=self.smooth)
         initialNoise = np.zeros((sampleSize,1),'float')
         self.snums.append(sampleSize)
         self.xys.append(line)
@@ -82,8 +82,8 @@ class SandSpline(object):
     def addBezier2cp(self,start,cp1,cp2,end):
         sampleSize = (self.sampleRange[0] + (random(1) * self.sampleRange[1])).astype('int')[0]
         #create the bezier line
-        line = utils.bezier2cp(start,cp1,cp2,end,sampleSize)
-        i2_line = utils._interpolate(line,self.interpolationPoints,smoothing=self.smooth)
+        line = utils.math.bezier2cp(start,cp1,cp2,end,sampleSize)
+        i2_line = utils.math._interpolate(line,self.interpolationPoints,smoothing=self.smooth)
         initialNoise = np.zeros((sampleSize,1),'float')
         self.snums.append(sampleSize)
         self.xys.append(line)
@@ -126,7 +126,7 @@ class SandSpline(object):
                         
             for x,y in points:
                 #draw each point as a circle:
-                utils.drawCircle(self.ctx,x,y,p_r)
+                utils.drawing.drawCircle(self.ctx,x,y,p_r)
 
         #draw the granulated points:
         for i,xy in enumerate(self.calculatedGrains):
@@ -137,7 +137,7 @@ class SandSpline(object):
             if interpolateGrains:
                 print('interpolating grains',i,' of ',lgrains)
                 for x,y in points:
-                    utils.drawCircle(self.ctx,x,y,p_r)
+                    utils.drawing.drawCircle(self.ctx,x,y,p_r)
             
 
     #------------------------------
@@ -162,10 +162,10 @@ class SandSpline(object):
 
             #if necessary granulate
             if granulate:
-                currentGrains = utils.granulate(points,grains=grains,mult=grainMult)
-                #points = utils._interpolate(points,sampleSize,smoothing=self.smooth)
+                currentGrains = utils.math.granulate(points,grains=grains,mult=grainMult)
+                #points = utils.math._interpolate(points,sampleSize,smoothing=self.smooth)
                 if interpolateGrains:
-                    currentGrains = utils._interpolate(currentGrains,self.interpolationPoints, smoothing=self.smooth)
+                    currentGrains = utils.math._interpolate(currentGrains,self.interpolationPoints, smoothing=self.smooth)
                 self.calculatedGrains.append(currentGrains)
                 
             #copy the points back into the main data store
