@@ -12,6 +12,7 @@ from random import choice
 #Drawing classes
 from ssClass import SandSpline
 from branches import Branches
+from GraphLines import GraphLines
 
 #Globals and constants:
 PIX = 1/pow(2,10)
@@ -43,8 +44,6 @@ def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render")
     global op
     global drawInstance
     global branchInstance
-    global voronoiInstance
-    global vexpInstance
     global cairo_surface
     global cairo_context
     global filename
@@ -78,6 +77,10 @@ def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render")
         drawBranch(X_size,Y_size)
     elif drawOption == "textTest":
         drawTextTest(X_size,Y_size)
+    elif drawOption == "graphLines":
+        graphL = GraphLines(ctx, (X_size, Y_size), numPoints=10, numLayers=4)
+        graphL.draw()
+        
     else:
         raise Exception("Unrecognized draw routine",drawOption)
 
@@ -85,7 +88,7 @@ def draw(ctx, drawOption,X_size,Y_size,surface=None,filenamebase="cairo_render")
         utils.drawing.write_to_png(surface,filenamebase)
     
 def iterateAndDraw():
-    """ Run transforms repeatedly on non-voronoi drawing classes """
+    """ Run transforms repeatedly on drawing classes """
     for i in range(iterationNum):
         logging.info('step: {}'.format(i))
         drawInstance.step(granulate,interpolateGranules)
