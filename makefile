@@ -1,4 +1,5 @@
 #Default arg to build:
+#eg: make draw=lines
 ifndef ${draw}
 	draw := "circles"
 endif
