@@ -1,5 +1,5 @@
 """
-A Class to Draw layers of points on a circle, connected by lines 
+A Class to Draw layers of points on a circle, connected by lines
 """
 import cairo_utils as utils
 import numpy as np
@@ -23,7 +23,6 @@ class GraphLines(SimpleDraw):
         self.alphaStep = 0.2
 
     def draw(self):
-        #todo: push and pop state
         self._ctx.set_line_width(0.01)
         alpha = 0
         #For each layer
@@ -38,7 +37,7 @@ class GraphLines(SimpleDraw):
             #Create a hull around the points
             hull = ConvexHull(ps)
 
-            #Draw edges of the convex hull 
+            #Draw edges of the convex hull
             last = None
             for j, index in enumerate(hull.vertices):
                 x,y = ps[index]
