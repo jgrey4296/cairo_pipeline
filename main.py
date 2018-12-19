@@ -3,13 +3,11 @@ import sys
 import time
 import math
 import cairo
-import draw_routines
 import logging
 
+import cairo_utils as utils
 #constants
 N = 12
-X = pow(2,N)
-Y = pow(2,N)
 imgPath = "./imgs/"
 imgName = "initialTest"
 currentTime = time.gmtime()
@@ -40,13 +38,6 @@ console.setLevel(logging.INFO)
 logging.getLogger('').addHandler(console)
 
 #setup
-surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, X,Y)
-ctx = cairo.Context(surface)
-ctx.scale(X,Y)
-ctx.set_font_size(FONT_SIZE)
-
+surface, ctx, size, n = utils.drawing.setup_cairo(n=N)
 
 #Drawing:
-draw_routines.draw(ctx,drawRoutineName,X,Y,surface=surface,filenamebase=saveString)
-
-
