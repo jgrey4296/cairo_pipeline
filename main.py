@@ -4,8 +4,9 @@ import time
 import math
 import cairo
 import logging
-
+import numpy as np
 import cairo_utils as utils
+import cairo_splines as cs
 #constants
 N = 12
 imgPath = "./imgs/"
@@ -20,7 +21,6 @@ saveString = "{}{}_{}-{}_{}-{}".format(imgPath,
                                        currentTime.tm_mday,
                                        currentTime.tm_mon,
                                        currentTime.tm_year)
-
 
 #get the type of drawing to do from the command line argument:
 if len(sys.argv) > 1:
@@ -38,6 +38,20 @@ console.setLevel(logging.INFO)
 logging.getLogger('').addHandler(console)
 
 #setup
-surface, ctx, size, n = utils.drawing.setup_cairo(n=N)
+surface, ctx, size, n = utils.drawing.setup_cairo(n=N,
+                                                  scale=False,
+                                                  cartesian=True)
 
 #Drawing:
+# create the drawing object
+draw_obj = cs.SimpleDraw(ctx, (size, size))
+# call generate
+draw_obj.generate()
+# call iterate
+
+# call sample
+
+# call draw
+draw_obj.draw_complex(colour=np.array([0,0,0,1]), bbox=np.array([0,0,size,size]))
+# save
+utils.drawing.write_to_png(surface, saveString)
