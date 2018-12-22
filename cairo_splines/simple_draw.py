@@ -13,17 +13,18 @@ class SimpleDraw:
         assert(isinstance(sizeTuple, tuple) and len(sizeTuple) == 2)
         self._ctx = ctx
         self._size = sizeTuple
-        #Core points
-        self._core_verts = np.zeros(2)
+        #Core points : np.array(x,y,rad,r,g,b)
+        self._core_verts = np.zeros((1,7))
         #More Complex shapes
-        self._lines = np.zeros(4)
+        self._lines = np.zeros((1,4))
         # [p1, cp1, cp2, p2]
-        self._beziers = np.zeros(8)
+        self._beziers = np.zeros((1,8))
         # [p, min_radius, max_radius, min_rads, max_rads]
-        self._circles = np.zeros(6)
+        self._circles = np.zeros((1,6))
         #additional data
-        self._samples = np.zeros(2)
+        self._samples = np.zeros((1,7))
         self._text = []
+        self._initial_conditions = []
 
     #------------------------------
     # def Abstract Methods
@@ -31,15 +32,22 @@ class SimpleDraw:
 
     def draw(self, bbox=None):
         """ Abstract Method that is called to draw to the canvas """
-        raise Exception("Abstract Draw needs to be implemented")
+        utils.drawing.draw_circle(self._ctx, self._core_verts)
+        utils.drawing.draw_circle(self._ctx, self._samples)
 
-    def iterate(self, i, data):
+    def iterate(self, i, frontier=None):
         """ Abstract method called to increment the state of a drawing """
         return []
 
     def generate(self):
         """ Abstract Method called to generate the drawing data """
-        raise Exception("Abstract Generate needs to be implemented")
+        verts = np.random.random((2050,7))
+        #scale up the position and radius: ((b - a) * x) + a
+        mask = np.array([1,1,1,0,0,0,0], dtype='float64')
+        mask *= np.array([self._size[0],self._size[1], self._size[0]*0.01, 0, 0, 0, 0])
+        mask += np.array([0,0,0,1,1,1,1])
+        points = (verts * mask)
+        self.add_points(points)
 
 	#------------------------------
 	# def Draw Primitives
@@ -48,25 +56,25 @@ class SimpleDraw:
     def add_points(self, points):
         """ Add 2 dimensional points to the data to draw """
         assert(isinstance(points, np.ndarray))
-        assert(points.shape[1] == 2)
+        assert(points.shape[1] == 7)
         self._core_verts = np.row_stack((self._core_verts, points))
 
     def add_lines(self, lines):
         """ Add lines to sample then draw """
         assert(isinstance(lines, np.ndarray))
-        assert(lines.shape[1] == 4)
+        assert(lines.shape[1] == 8)
         self._lines = np.row_stack((self._lines, lines))
 
     def add_bezier(self, beziers):
         """ Add 2 cp bezier curves to sample then draw """
         assert(isinstance(beziers, np.ndarray))
-        assert(beziers.shape[1] == 8)
+        assert(beziers.shape[1] == 12)
         self._beziers = np.row_stack((self._beziers, beziers))
 
     def add_circle(self, circles):
         """ Add circles to sample then draw """
         assert(isinstance(circles, np.ndarray))
-        assert(circles.shape[1] == 6)
+        assert(circles.shape[1] == 7)
         self._circles = np.row_stack((self._circles, circles))
 
     def add_text(self, text, position, size, colour):
@@ -95,7 +103,7 @@ class SimpleDraw:
 
     def start_iterate(self, n):
         """ Iterates the class a number of times """
-        data = []
+        data = self._initial_conditions
         for x in range(n):
             data = self.iterate(x, data)
 
