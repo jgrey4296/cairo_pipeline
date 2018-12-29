@@ -45,12 +45,8 @@ surface, ctx, size, n = utils.drawing.setup_cairo(n=N,
 #Drawing:
 # create the drawing object
 draw_obj = cs.SimpleDraw(ctx, (size, size))
-# call generate
-draw_obj.generate()
-# call iterate
-
-# call sample
-
+draw_obj.pipeline([cs.ExampleDraw,
+                   cs.ColourPipeline])
 # call draw
 draw_obj.draw_complex(colour=np.array([0,0,0,1]), bbox=np.array([0,0,size,size]))
 # save

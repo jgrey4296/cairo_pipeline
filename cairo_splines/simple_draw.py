@@ -26,7 +26,7 @@ class SimpleDraw:
         #additional data
         self._samples = np.zeros((1,7))
         self._text = []
-        self._initial_conditions = []
+
 
     #------------------------------
     # def Abstract Methods
@@ -36,40 +36,18 @@ class SimpleDraw:
         """ Abstract Method that is called to draw to the canvas """
         utils.drawing.draw_circle(self._ctx, self._core_verts)
         utils.drawing.draw_circle(self._ctx, self._samples)
+        self.draw_text()
 
-    def iterate(self, i, frontier=None):
-        """ Abstract method called to increment the state of a drawing """
-        return []
 
-    def generate(self):
-        """ Abstract Method called to generate the drawing data """
-        verts = np.random.random((20,7))
-        #scale up the position and radius: ((b - a) * x) + a
-        mask = np.array([1,1,1,0,0,0,0], dtype='float64')
-        mask *= np.array([self._size[0],self._size[1], self._size[0]*0.01, 0, 0, 0, 0])
-        mask += np.array([0,0,0,1,1,1,1])
-        points = (verts * mask)
-        # self.add_points(points)
-        self.add_circle(np.array([[self._center[0], self._center[1],
-                                   0, utils.constants.TWOPI,
-                                   360, 3800,
-                                   0,1,1,0.05
-                                   ]]))
-        self.add_points(np.array([[self._center[0], self._center[1],300, 1, 0, 0, 1],
-                                  [0,0,150, 0, 0, 1,1],
-                                  [0,self._size[1],150, 0, 0.5, 0.5, 1],
-                                  [self._size[0],0,150, 0.5, 0.5, 0, 1]]))
-        self.add_bezier(np.array([[self._center[0] - self._size[0]*0.5, self._center[1],
-                                   self._center[0], self._center[1] + self._size[1]*0.25,
-                                   self._center[0] + self._size[0]*0.25, self._center[1] - self._size[1]*0.25,
-                                  self._center[0] + self._size[0]*0.5, self._center[1],
-                                   1,0.2,0.4,1]]))
-        self.add_bezier(np.array([[self._center[0] - self._size[0]*0.5, self._center[1],
-                                   self._center[0], self._center[1] + self._size[1]*0.25,
-                                   self._center[0] + self._size[0]*0.25, self._center[1] - self._size[1]*0.25,
-                                  self._center[0] + self._size[0]*0.5, self._center[1],
-                                   1,0.2,0.4,1]]))
-        self.sample_shapes(800, r=13)
+    def pipeline(self, pipeline):
+        """ Transforms the drawing in a set of steps """
+        assert(all([callable(x) for x in pipeline]))
+        pipeline_data = None
+        for x in pipeline:
+            pipeline_data = x(self, pipeline_data)
+
+        return pipeline_data
+
 	#------------------------------
 	# def Draw Primitives
 	#------------------------------
@@ -119,7 +97,7 @@ class SimpleDraw:
         for (t,p,s,c) in self._text:
             self._ctx.set_font_size(s)
             self._ctx.set_source_rgba(*c)
-            utils.drawing.drawText(self._ctx, p, t)
+            utils.drawing.draw_text(self._ctx, p, t)
 
     def draw_complex(self, colour=None, bbox=None, push=False):
         """ A Wrapper for Draw, simplifies stack management and clearing """
@@ -131,13 +109,7 @@ class SimpleDraw:
         if push:
             self._ctx.restore()
 
-    def start_iterate(self, n):
-        """ Iterates the class a number of times """
-        data = self._initial_conditions
-        for x in range(n):
-            data = self.iterate(x, data)
-
-	#------------------------------
+    #------------------------------
     # def Sampling
     #------------------------------
 

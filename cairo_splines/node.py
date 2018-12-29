@@ -7,7 +7,7 @@ import numpy.random as rand
 import IPython
 
 class Node:
-    """ A Single Point in the Hyphae Calculation """
+    """ A Single Point in the Node based drawing Calculation """
 
     def __init__(self, loc, d, distance, perpendicular=False, colour=None):
         assert(len(loc) == 2)
