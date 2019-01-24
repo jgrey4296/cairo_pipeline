@@ -1,15 +1,31 @@
+##############################
+#CONSTANTS:
+####################
 import numpy as np
 from random import randrange
 from numpy.random import random
 import numpy.random as rand
 import math
-from cairo_utils.math import clamp, get_distance
+import networkx as nx
+from cairo_utils.umath import clamp, get_distance
 
-##############################
-#CONSTANTS:
-####################
+MAX_LAYER_LOOP = 100
+
+#The number of items in a sample
+# Currently: [x,y, rad, r,g,b,a]
+SAMPLE_DATA_LEN = 7
+#Data Required for a line:
+LINE_DATA_LEN = 8
+#Data required for a bezier:
+BEZIER_DATA_LEN = 12
+#Data required for a circle:
+CIRCLE_DATA_LEN = 10
+#COLOUR SIZE
+COLOUR_SIZE = 4
+
 #The Radius of the circle to hyphae in
 HYPHAE_CIRC = 0.45
+
 #Default initial nodes to grow from:
 #START_NODES = np.array([[0.4, 0.4], [0.6, 0.6]])
 NUM_START=1
@@ -26,6 +42,7 @@ LINE_WIDTH = 0.005
 #Interpolation and clamping
 rad_lerp = lambda x: np.interp(x, [0, 1], [-math.pi, math.pi])
 rad_clamp = lambda x: clamp(x, -math.pi, math.pi)
+randf = lambda x=1: rand.beta(1,5,x)
 
 NODE_START_SIZE = 0.007
 NODE_SIZE_DECAY = 0 #0.00002
@@ -33,8 +50,6 @@ MIN_NODE_SIZE = 0.0008
 
 MAX_FRONTIER_NODES = 100
 MAX_GROWTH_STEPS = 200000
-
-randf = lambda x=1: rand.beta(1,5,x)
 
 ####################
 #Main Values to modify:
@@ -59,7 +74,6 @@ DELTA_CLAMP = (0.0001, 0.02)
 #Mutation ranges:
 #mod (colour, delta, wiggle, split, branch)
 mod_chances = (0.4,0.2,0.5,0.5,0)
-
 mut_c_range = (-0.0,0.1)
 mut_d_range = (-0.001,0.001)
 
@@ -77,8 +91,6 @@ mut_btc = (0.0, 0.02)
 
 ####################
 # From Sand Spline
-TWOPI = np.pi*2
-HPI = np.pi * 0.5
 sampleRange = [10, 200]
 radiusRange = [0.2, 0.35]
 interpolationPoints = 3000
@@ -89,3 +101,24 @@ grainMult = 1.2
 smooth = 0.9
 ALPHA = 0.09
 rMod = 1.3
+
+####################
+# Branch Variables
+BRANCH_AMNT = 0.1
+DELTA = 1 / 100
+HALF_DELTA = DELTA * 0.5
+BAL_PI = math.pi - (math.pi * 0.5)
+LINEPOINTS = 100
+RADIUS = 0.002
+NODE_NUM = 100
+NODE_RECIPROCAL = 1 / NODE_NUM
+NUM_START_POINTS = 5
+__NEXT_NODE = 0
+
+# Occupied locations grid:
+grid = np.zeros((NODE_NUM, NODE_NUM), dtype=int)
+# Paths graph
+paths = nx.Graph()
+# Nodes index
+nodes = {}
+
