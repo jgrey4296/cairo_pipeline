@@ -54,6 +54,7 @@ def sample_layer(d, opts, data):
         data['n'] = opts['n']
     r = opts['r']
     colour = opts['colour']
+    data['c_type'] = opts['c_type']
     target_data = d._geometry[opts['target']]
     target_sampler = constants.SAMPLER_LOOKUP[opts['target']]
     easing = None
@@ -87,6 +88,7 @@ def draw_layer(d, opts, data):
     Parameters: push, pixel (square, circle), draw
     """
     saveString = opts['saveString']
+    draw = data['draw']
     drawn = 0
     if 'drawn' in data:
         drawn = data['drawn']
@@ -103,7 +105,7 @@ def draw_layer(d, opts, data):
     if 'push' in opts:
         d._ctx.restore()
 
-    if 'draw' in opts:
+    if draw:
         utils.drawing.write_to_png(d._surface, saveString, i=drawn)
         data['drawn'] = drawn + 1
     return data
@@ -152,21 +154,24 @@ def wiggle_layer(d, opts, data):
 
 def hsla_rgba_layer(d, opts, data):
     """ Layer that converts hsla format colour samples, to rgba """
+    assert(data['c_type'] == 'hsla')
     samples = d._samples[:,:-4]
     colours = d._samples[:,-4:]
 
     rgba_ed = hsla2rgba(colours)
     d._samples = np.column_stack((samples, rgba_ed))
+    data['c_type'] = 'rgba'
     return data
 
 def rgba_hsla_layer(d, opts, data):
+    assert(data['c_type'] == 'rgba')
     """ Layer that converts rgba format colour samples, to hsla """
     samples = d._samples[:,:-4]
     colours = d._samples[:,-4:]
 
     hsla_ed = rgba2hsla(colours)
-
     d._samples = np.column_stack((samples, hsla_ed))
+    data['c_type'] = 'hsla'
     return data
 
 def no_op_layer(d, opts, data):
@@ -199,16 +204,26 @@ def loop_layer(d, opts, data):
 
 def skip_layer(d, opts, data):
     """ Layer that skips over layers that come after it.
-    Parameters: type (first_only, every, not_first), skip_num
+    Parameters: type (first, every), skip_num
     """
-    first_only = opts['type'] == 'first_only' and data['loop_num'] == 0
-    repeatable = opts['type'] == 'every' and \
-        data['current_loop'] % opts['every'] == 0
-    not_first = opts['type'] == 'not_first' and data['loop_num'] > 0
+
+    first = opts['type'] == 'first'
+    is_first = data['current_loop'] == 0
+    every = opts['type'] == 'every'
+    count = 5
+    if 'count' in opts:
+        count = opts['count']
+    is_count_loop = (data['current_loop'] % count) == 0
+    invert = 'not' in opts and opts['not']
     skip_num = 1
     if 'num' in opts:
         skip_num = opts['skip_num']
-    if first_only or repeatable or not_first:
+
+    if (first and not invert and is_first) \
+       or (first and invert and not is_first) \
+       or (every and not invert and is_count_loop) \
+       or (every and invert and not is_count_loop):
+        logging.info("Skipping {} layers".format(skip_num))
         data['current_step'] += skip_num
     return data
 
@@ -225,7 +240,7 @@ def finish_layer(d, opts, data):
 def log_layer(d, opts, data):
     """ Layer that logs a formatted message, using variables bound in pipeline state """
     logging.info('----------')
-    logging.info(data['message'].format(**data))
+    logging.info(opts['message'].format(**data))
     return data
 
 def clear_canvas_layer(d, opts, data):
@@ -239,7 +254,7 @@ def clear_canvas_layer(d, opts, data):
     clear_type   = data['clear_type']
 
     if clear_type == 'hsla':
-        clear_colour = utils.colour.hsla2rgba(clear_colour)
+        clear_colour = utils.colour.hsla2rgba(clear_colour.reshape((1,-1)))[0]
 
     utils.drawing.clear_canvas(d._ctx,
                                colour=clear_colour,
@@ -250,3 +265,4 @@ def set_var_layer(d, opts, data):
     """ Layer that sets pipeline state variables """
     for x,y in opts.items():
         data[x] = y
+    return data
