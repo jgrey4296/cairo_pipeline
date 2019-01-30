@@ -52,7 +52,7 @@ def create_point(d, opts, data):
 
 
 def create_lines(d, opts, data):
-    Creates a number of random lines """
+    """ Creates a number of random lines """
     rnd = np.random.random((opts['num'], 4))
     scaled = rnd * [*d._size, *d._size]
     d.add_lines(scaled)
