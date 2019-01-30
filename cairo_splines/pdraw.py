@@ -54,7 +54,7 @@ class PDraw:
 
     def register_call(self, name, func, start_state=None):
         """ Registers a callable function, and its personal data store """
-        if state_state is None:
+        if start_state is None:
             start_state = {}
         self._registered_call[name] = (func, start_state)
 
@@ -66,17 +66,19 @@ class PDraw:
         self.register_call(name, func, new_state)
         return result
 
+    def call_state(self, name):
+        return self._registered_call[name][1]
+
     def pipeline(self, pipelines, max_loops=10):
         """ Transforms the drawing in a set of steps """
         data = { 'current_step' : 0,
                  'finish' : False,
-                 'loop_num' : 0,
+                 'current_loop' : 0,
                  'max_loops' : max_loops}
         pipe_pairs = list(zip(islice(pipelines, 0, len(pipelines), 2),
                               islice(pipelines, 1, len(pipelines), 2)))
         pipeline_length = len(pipe_pairs)
-        while data['current_step'] < pipe_pairs \
-              and not data['finish']:
+        while data['current_step'] < pipeline_length and not data['finish']:
             #####
             x, opts = pipe_pairs[data['current_step']]
             logging.info("Running Layer: ({}) {}".format(len(self._samples), x.__name__))
