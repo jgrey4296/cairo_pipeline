@@ -11,15 +11,15 @@ def ColourPipeline(d, opts, data):
     speed = opts['speed']
     easing = utils.easings.lookup(opts['easing'])
 
-    samples = d._samples[1:].reshape((-1, n, constants.SAMPLE_DATA_LEN))
+    samples = d._samples[1:].reshape((-1, n, utils.constants.SAMPLE_DATA_LEN))
     ones = np.ones(n)
     c_i = (np.linspace(0, 1, n))
     rndMax = opts['rndsig'][1] - opts['rndsig'][0]
     results = np.zeros((1, 7))
 
     for sample_set in samples:
-        non_colour = sample_set[:, :-constants.COLOUR_SIZE]
-        colours = sample_set[:, -constants.COLOUR_SIZE:]
+        non_colour = sample_set[:, :-utils.constants.COLOUR_SIZE]
+        colours = sample_set[:, -utils.constants.COLOUR_SIZE:]
 
 
         rnd = easing(opts['rndsig'][0] + (np.random.random((n)) * rndMax) , 0)
@@ -46,6 +46,6 @@ def ColourPipeline(d, opts, data):
     if 'alpha' in opts:
         results[:,-1] = opts['alpha']
     if 'radius' in opts:
-        results[:, -(constants.COLOUR_SIZE + 1)] = opts['radius']
+        results[:, -(utils.constants.COLOUR_SIZE + 1)] = opts['radius']
     d._samples = results[1:]
     return data
