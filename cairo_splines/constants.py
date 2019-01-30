@@ -7,21 +7,21 @@ from numpy.random import random
 import numpy.random as rand
 import math
 import networkx as nx
+import cairo_utils.umath as umath
 from cairo_utils.umath import clamp, get_distance
 
 MAX_LAYER_LOOP = 100
 
-#The number of items in a sample
-# Currently: [x,y, rad, r,g,b,a]
-SAMPLE_DATA_LEN = 7
-#Data Required for a line:
-LINE_DATA_LEN = 8
-#Data required for a bezier:
-BEZIER_DATA_LEN = 12
-#Data required for a circle:
-CIRCLE_DATA_LEN = 10
-#COLOUR SIZE
-COLOUR_SIZE = 4
+
+SAMPLER_LOOKUP = {
+    'line': umath.sample_along_lines,
+    'circle': lambda x, c, easing=None: umath.sample_circle(x,
+                                                            c,sort_rads=True,
+                                                            sort_radi=False,
+                                                            easing=easing),
+    'bezier' : umath.bezier2cp
+    }
+
 
 #The Radius of the circle to hyphae in
 HYPHAE_CIRC = 0.45
