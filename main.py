@@ -1,3 +1,4 @@
+#!/Users/jgrey/anaconda/bin/python
 #!/users/jgrey/anaconda/bin/python
 import sys
 import time
@@ -18,6 +19,10 @@ imgPath = "./imgs/"
 imgName = "initialTest"
 currentTime = time.gmtime()
 FONT_SIZE = 0.03
+FULL = utils.easings.CODOMAIN.FULL
+LEFT = utils.easings.CODOMAIN.LEFT
+RIGHT = utils.easings.CODOMAIN.RIGHT
+
 #format the name of the image to be saved thusly:
 saveString = "{}{}_{}-{}_{}-{}".format(imgPath,
                                        imgName,
@@ -47,70 +52,80 @@ surface, ctx, size, n = utils.drawing.setup_cairo(n=N,
                                                   scale=False,
                                                   cartesian=True)
 
+def dist_trans(i, opts, data):
+    opts['scale'] -= (data['current_loop'] * 0.5 * i * opts['decrease'])
+    opts['speed'] += (data['current_loop'] * 0.5 * i * opts['increase'])
+    return opts
+
 #Drawing:
 # create the drawing object
-draw_obj = cs.PDraw(ctx, (size, size), surface)
-draw_obj.register_call('random', cr.simple_random_call)
+d_o = cs.PDraw(ctx, (size, size), surface)
+d_o.register_call('random', cr.simple_random_call)
+d_o.register_call('ease', cr.run_easing)
+d_o.register_call('add_noise', cr.additive_noise)
+d_o.register_call('pop', cr.pop_value)
 
-
-
-draw_obj.pipeline([ util_layer.no_op_layer, {}
-                    # , gg.create_two_splines, {}
-                    # , gg.create_points, {}
-                    , gg.create_line, {}
-                    # , gg.create_lines, { 'num' : 15 }
-                    # , gg.create_grid, { 'num': 10 }
-                    # , gg.create_circle, {}
-                    , util_layer.text_layer, { 'text' : '' }
-                    , util_layer.sample_layer, { 'n' : 3000,
+d_o.pipeline([ util_layer.no_op_layer, {}
+               # , gg.create_two_splines, {}
+               # , gg.create_points, {}
+               # , gg.create_line, {}
+               # , gg.create_lines, { 'num' : 15 }
+               , gg.create_grid, { 'num': 10 }
+               # , gg.create_circle, {}
+               , util_layer.text_layer, { 'text' : '' }
+               , util_layer.sample_layer, { 'n' : 3000,
                                                  'r' : 3,
-                                                 'colour' : np.array([75, 0.4, 0.7, 0.3]),
-                                                 'c_type' : 'hsla',
-                                                 'target' : 'line',
-                                                 'choice' : -1}
-                    , util_layer.loop_start_layer, {}
-                    , util_layer.log_layer, { 'message' : 'Loop: {current_loop}' }
-                    , util_layer.skip_layer, { 'type' : 'first' }
-                    , util_layer.rgba_hsla_layer, {}
-                    , sand_deform.displace_layer, {'easing': ['sigmoid','linear'],
-                                                   'scale' : [10,10],
-                                                   'speed' : [4.01, 4.01],
-                                                   'phase' : [0,0],
-                                                   'noise_mul' : 0.1 }
-                    # , sand_deform.granulate_layer, {'rad' : [-utils.constants.QUARTERPI,
-                    #                                          -utils.constants.QUARTERPI+0.4],
-                    #                                 'mult'  : [200,200],
-                    #                                 'choice': 0.4}
-                    # , util_layer.sample_layer, { 'r' : 5,
-                    #                              'colour' : np.array([101, 0.4, 0.5, 0.02]),
-                    #                              'target' : 'line',
-                    #                              'choice' : 0.01}
-                    # , sand_deform.displace_layer,    {'channels': 10,
-                    #                                      'easing': 'sigmoid',
-                    #                                      'scale' : 100,
-                    #                                      'speed' : [-2.2,2.8],
-                    #                                      'phase' : [0.2,3.2 ],
-                    #                                      'noise_mul' : 1.8,
-                    #                                      'override' : True}
-                    # , util_layer.skip_layer, { 'type' : 'first', 'not' : True }
-                    # , util_layer.duplicate_layer,  { 'num' : 10}
-                    # , util_layer.wiggle_layer, { 'scale' : [-2, 2],
-                    #                              'dir' : [0.8, 1.2]}
-                    # , cp.hue_rotate, {'easing': 'sigmoid',
-                    #                   'noise' : [30, 30] }
-                    , util_layer.hsla_rgba_layer, {}
-                    , util_layer.clear_canvas_layer, { 'clear_colour' : np.array([0,0,0,1]),
-                                                       'clear_type' : 'hsla',
-                                                       'bbox' : np.array([0,0,size,size]) }
-                    , util_layer.skip_layer, { 'type' : 'every',
-                                               'count': 10,
-                                               'not' : True}
-                    , util_layer.set_var_layer, { 'draw': True }
-                    , util_layer.draw_layer, { 'pixel' : 'circle',
-                                               'saveString' : saveString,
-                                               'draw'  : True}
-                    , util_layer.set_var_layer, { 'clear_colour' : np.array([0,0,0,0]),
-                                                  'draw' : False}
-                    , util_layer.loop_layer, { 'max_loops' : 40}
-                    , util_layer.finish_layer, {}
+                                            'colour' : np.array([300, 0.4, 0.4, 0.15]),
+                                            'c_type' : 'hsla',
+                                            'target' : 'line',
+                                            'choice' : -1}
+               #--------------------
+               , util_layer.loop_start_layer, {}
+               , util_layer.log_layer, { 'message' : 'Loop: {current_loop}' }
+               , util_layer.skip_layer, { 'type' : 'first' }
+               , util_layer.rgba_hsla_layer, {}
+               , sand_deform.test_displace, {'scale': [280, 10, 50, -20, 50, 20, -10] }
+               # , util_layer.make_repeat_transform_layer([
+               #     sand_deform.displace_layer, {'easing': [('pow_cos_pi', 3.5, [0,1], FULL),
+               #                                             ('pow_cos_pi', 3.5, [0,1],  FULL)],
+               #                                  'scale' : 50,
+               #                                  'decrease': 3,
+               #                                  'speed' : 3,
+               #                                  'increase' : 3,
+               #                                  'phase' : 0,
+               #                                  'p_noise' : 0,
+               #                                  'r_noise' : 0}]), { 'num': 5,
+               #                                                      'transform' : dist_trans}
+               # , sand_deform.granulate_layer, {'rad' : [-utils.constants.QUARTERPI,
+               #                                          -utils.constants.QUARTERPI+0.4],
+               #                                 'mult'  : [200,200],
+               #                                 'choice': 0.4}
+               # , util_layer.sample_layer, { 'r' : 5,
+               #                              'colour' : np.array([101, 0.4, 0.5, 0.02]),
+               #                              'target' : 'line',
+               #                              'choice' : 0.01}
+               # , util_layer.skip_layer, { 'type' : 'first', 'not' : True, 'skip_num': 1}
+               # , util_layer.duplicate_layer,  { 'num' : 3}
+               # , util_layer.wiggle_layer, { 'scale' : [0,2],
+               #                               'dir' : [0, utils.constants.TWOPI]}
+               , cp.hue_rotate, {'easing': 'sigmoid',
+                                 'noise_range' : [30,30,-40,-40,25] }
+               , util_layer.hsla_rgba_layer, {}
+               , util_layer.clear_canvas_layer, { 'clear_colour' : np.array([0,0,0,1]),
+                                                  'clear_type' : 'hsla',
+                                                  'bbox' : np.array([0,0,size,size]) }
+               , util_layer.skip_layer, { 'type' : 'every',
+                                          'count': 1,
+                                          'not' : True}
+               , util_layer.set_var_layer, { 'draw': True }
+               , util_layer.subsample_layer, { 'n': 1000,
+                                               'sections': 20 }
+               , util_layer.draw_layer, { 'pixel' : 'circle',
+                                          'saveString' : saveString,
+                                          'draw'  : True}
+               , util_layer.set_var_layer, { 'clear_colour' : np.array([0,0,0,0]),
+                                             'draw' : False}
+               , util_layer.loop_layer, { 'max_loops' : 7}
+               #--------------------
+               , util_layer.finish_layer, {}
 ])
