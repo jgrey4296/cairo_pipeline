@@ -58,13 +58,13 @@ class PDraw:
             start_state = {}
         self._registered_call[name] = (func, start_state)
 
-    def call(self, name, args):
+    def call(self, name, args, data=None):
         """ Calls a registered_call by name, with a dictionary of arguments, and its personal state
         The call returns the result of the calculation, and an updated personal state """
         func, state = self._registered_call[name]
-        result, new_state = func(args, state)
+        result, new_state, new_data = func(self, args, state, data=data)
         self.register_call(name, func, new_state)
-        return result
+        return (result, new_data)
 
     def call_state(self, name):
         return self._registered_call[name][1]
@@ -81,7 +81,10 @@ class PDraw:
         while data['current_step'] < pipeline_length and not data['finish']:
             #####
             x, opts = pipe_pairs[data['current_step']]
-            logging.info("Running Layer: ({}) {}".format(len(self._samples), x.__name__))
+            if hasattr(x, '__name__'):
+                logging.info("Running Layer: ({}) {}".format(len(self._samples), x.__name__))
+            else:
+                logging.info("Running Anonymous Layer")
             data = x(self, opts, data)
             data['current_step'] += 1
             ####
