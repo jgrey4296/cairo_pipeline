@@ -3,29 +3,57 @@ General Utility pipelines
 """
 import numpy as np
 from functools import partial
+from itertools import islice
 import cairo_utils as utils
 from cairo_utils.colour import rgba2hsla, hsla2rgba
 from cairo_utils.constants import SAMPLE_DATA_LEN
 from . import constants
 import IPython
-
 import logging as root_logger
 logging = root_logger.getLogger(__name__)
 
 
-def make_repeat_layer(n, layers):
+def make_repeat_layer(layers):
     """ Given a number of times to repeat,
     and a list of layers, create a layer to repeat those layers
     when called in PDraw.pipeline """
-    assert(all([callable(x) for x in layers]))
-    return partial(_repeat_layer, n, layers)
+    return partial(_repeat_layer, layers)
 
-def _repeat_layer(n, layers, d, opts, data):
+def _repeat_layer(layers, d, opts, data):
     """ The function used to create a repeat layer partial """
-    for i in range(n):
-        for l in layers:
-            data = l(d, data)
+    pipe_pairs = list(zip(islice(layers, 0, len(layers), 2),
+                          islice(layers, 1, len(layers), 2)))
+    pipeline_length = len(pipe_pairs)
+    the_data = data
+    for i in range(opts['num']):
+        for l,o in pipe_pairs:
+            logging.info("Looping Layer: {}".format(l.__name__))
+            the_data = l(d, o, the_data)
+    logging.info("Looping Finished")
     return data
+
+
+def make_repeat_transform_layer(layers):
+    """ Given a number of times to repeat,
+    and a list of layers, create a layer to repeat those layers
+    when called in PDraw.pipeline """
+    return partial(_repeat_transform_layer, layers)
+
+def _repeat_transform_layer(layers, d, opts, data):
+    """ The function used to create a repeat layer partial """
+    pipe_pairs = list(zip(islice(layers, 0, len(layers), 2),
+                          islice(layers, 1, len(layers), 2)))
+    pipeline_length = len(pipe_pairs)
+    the_data = data
+    transform = opts['transform']
+    for i in range(opts['num']):
+        for l,o in pipe_pairs:
+            o_t = transform(i,o,data)
+            logging.info("Looping Layer: {}".format(l.__name__))
+            the_data = l(d, o_t, the_data)
+    logging.info("Looping Finished")
+    return data
+
 
 def make_conditional_repeat_layer(cond, layers):
     """ Given a condition, and a list of layers,
@@ -100,6 +128,12 @@ def draw_layer(d, opts, data):
         utils.drawing.draw_rect(d._ctx, d._samples)
     else:
         utils.drawing.draw_circle(d._ctx, d._samples)
+
+    if 'subsample' in data:
+        if opts['pixel'] == 'square':
+            utils.drawing.draw_rect(d._ctx, data['subsample'])
+        else:
+            utils.drawing.draw_circle(d._ctx, data['subsample'])
 
     d.draw_text()
     if 'push' in opts:
@@ -266,3 +300,25 @@ def set_var_layer(d, opts, data):
     for x,y in opts.items():
         data[x] = y
     return data
+
+
+def subsample_layer(d, opts, data):
+    n = opts['n']
+    section_num = opts['sections'] + 1
+    end_points = np.linspace(0,data['n'],section_num, dtype=int)
+    segments = list(zip(end_points[:-1],end_points[1:]))
+    subsample = np.zeros((1, utils.constants.SAMPLE_DATA_LEN))
+    samples = d._samples[1:].reshape((-1, data['n'], utils.constants.SAMPLE_DATA_LEN))
+    for (i, sampleset) in enumerate(samples):
+        xys = sampleset[:,:2]
+        rst = sampleset[:,2:]
+        for (start,end) in segments:
+            rst_segment = rst[start:end].repeat(int(n/(end-start)), axis=0)
+            i_xys = utils.umath._interpolate(xys[start:end], n)
+            best_length = min(len(rst_segment), len(i_xys))
+            combined = np.column_stack((i_xys[:best_length], rst_segment[:best_length]))
+            subsample = np.row_stack((subsample, combined))
+
+    data['subsample'] = subsample
+    return data
+
