@@ -1,4 +1,4 @@
-/"""
+"""
 An re-implementation of inconvergent's hyphae
 """
 from collections import deque
@@ -18,6 +18,16 @@ from .Node import Node
 
 logging = root_logger.getLogger(__name__)
 
+#########################
+# PIPELINE Layer
+#########################
+def hyphae_pipeline(d, pipeline_data):
+    # Setup
+
+    #Repeatedly Grow
+
+    return None
+#########################
 
 def get_node_neighbourhood(d, node, loc=None):
     assert(isinstance(node, Node))
@@ -53,7 +63,6 @@ def backtrack_random(d):
     if randNode.open() and random() < randNode.backtrack_likelihood:
         randNode.perpendicular = True
         d.frontier.append(randNode.id)
-
 
 def backtrack_from_branch(d):
     """ occasionally backtrack from a branch point: """

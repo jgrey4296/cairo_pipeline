@@ -1,10 +1,10 @@
+import numpy as np
+import numpy.random as rand
+import IPython
 from uuid import uuid1
 from . import constants
 from .constants import randf
 from cairo_utils.umath import get_distance, get_normal, clamp
-import numpy as np
-import numpy.random as rand
-import IPython
 
 class Node:
     """ A Single Point in the Node based drawing Calculation """

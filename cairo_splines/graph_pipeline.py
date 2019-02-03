@@ -3,7 +3,7 @@ A Class to Draw layers of points on a circle, connected by lines
 """
 import cairo_utils as utils
 import numpy as np
-from SimpleDraw import SimpleDraw
+from pdraw import PDraw
 from functools import cmp_to_key
 from scipy.spatial import ConvexHull
 import IPython
@@ -17,6 +17,12 @@ NUM_LAYERS = NUM_LAYERS
 ALPHA_STEP = 0.2
 
 def graph_pipeline(d, pipeline_data):
+    # Assume there are circles defined
 
+    #Create points placed around the circle points
+
+    #sort
+
+    #connect with lines
 
     return pipeline_data
