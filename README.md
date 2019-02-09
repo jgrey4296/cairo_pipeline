@@ -1,4 +1,4 @@
-# Cairo Splines #
+# Cairo Pipeline #
 
 A Python Library to draw pipelines of commands, that are transformed into
 stochastically sampled points. Inspired by Inconvergent.
@@ -12,7 +12,6 @@ numpy,
 ## Pipeline requirements ##
 
 Pipelines are functions:
-
 `
 def a_pipeline(pdraw_instance, data):
     return data
@@ -20,19 +19,3 @@ def a_pipeline(pdraw_instance, data):
 
 Pipelines are passed to pdraw_instance.pipeline as a list.
 Data is customisable to pass to subsequent pipeline layers.
-
-## Pipelines ##
-
-### ExamplePipeline ###
-
-### ColourPipeline ###
-
-### RepeatLayer ###
-
-### SandDeformation ###
-
-### GraphPipeline ###
-
-### BranchPipeline ###
-
-### HyphaePipeline ###
