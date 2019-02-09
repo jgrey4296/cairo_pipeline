@@ -11,7 +11,8 @@ from . import constants
 import IPython
 
 
-def test_displace(d, opts, data):
+def simple_noise(d, opts, data):
+    """ Simple Displacement noise using additive sine signals  """
     n = data['n']
     samples = d._samples[1:].reshape((-1, n, utils.constants.SAMPLE_DATA_LEN))
     result = np.zeros((1,utils.constants.SAMPLE_DATA_LEN))
@@ -45,11 +46,11 @@ def test_displace(d, opts, data):
         transformed = xys + rot
         recombined = np.column_stack((transformed, rst))
         result = np.row_stack((result, recombined))
-    # d._samples = np.row_stack((d._samples, result[1:]))
+
     d._samples = result
     return data
 
-def displace_layer(d, opts, data):
+def __incorrect_noise_layer(d, opts, data):
     """ Treats data as sequences to be displaced by noisy sine signals """
     n = data['n']
     d_noise = np.zeros((1, n, 1))
@@ -95,17 +96,23 @@ def displace_layer(d, opts, data):
     return data
 
 def granulate_layer(d, opts, data):
+    """ A Layer to granulate a signal of samples """
     n = data['n']
     rad = opts['rad']
     samples = d._samples[1:].reshape((-1, n, utils.constants.SAMPLE_DATA_LEN))
     result = np.zeros((1, utils.constants.LINE_DATA_LEN))
 
+    #Select a subset of points
+    #sample from those, pull across the direction
+    # and use them as the current point set
+    # to be displaced in another layer
+    
     for sample_set in samples:
         xys = sample_set[:,:2]
         rst = sample_set[:,2:]
         ds = xys[:-1] - xys[1:]
         dirs = np.arctan2(ds[:,1], ds[:,0])
-        rads, discard = d.call('random', { 'range': rad, 'shape': dis.shape })
+        rads, discard = d.call('random', { 'range': rad, 'shape': dirs.shape })
 
         dirs_prime = dirs + rads
         rot_vector = np.array([np.cos(dirs_prime), np.sin(dirs_prime)]).T
@@ -116,6 +123,7 @@ def granulate_layer(d, opts, data):
         grain_line = np.column_stack((xys[:-1], xys[:-1] + scaled_rot))
 
         result = np.row_stack((result, grain_line))
+
 
     d.add_lines(result)
     return data

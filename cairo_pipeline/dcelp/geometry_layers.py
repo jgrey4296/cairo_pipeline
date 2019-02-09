@@ -3,6 +3,7 @@ An initial geometry generating pipeline layers
 """
 import IPython
 import numpy as np
+from scipy.spatial import ConvexHull
 import cairo_utils as utils
 from .pdraw import PDraw
 
@@ -81,3 +82,11 @@ def create_line(d, opts, data):
     d.add_lines(lines)
     return data
 
+def create_circle_graph(d, opts, data):
+    """ Create a circle of nodes connected by lines of radius r  """
+    r = opts['r']
+    num_nodes = opts['num']
+    #create the nodes
+    #create the lines
+
+    return data
