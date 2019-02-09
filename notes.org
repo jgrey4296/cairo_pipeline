@@ -49,3 +49,65 @@
    y = 1/(2*(b-k))(x-a)^2 + ((b+k)/2)
 
    (x-a)^2 = (x-a)(x-a) = x^2 - 2ax + a^2
+
+
+
+* City Generator Integration notes
+  standard pattern of operator setup,
+  with a non-deterministic operator sequence
+
+  select ->  place -> parameterize -> perform -> verify -> pool mod
+
+
+** heightmap                                                                    :to_utils:
+** misc
+** operators
+
+*** road
+
+*** building
+
+*** selection
+
+*** flow
+
+*** destroy
+
+*** deadend
+
+*** crossing
+
+*** clone
+
+*** bisect
+
+*** bezier river
+
+*** align
+
+*** heightmap
+
+*** intersection
+
+*** length
+
+*** merge
+
+*** move
+
+*** plant
+
+*** point
+
+*** rotate
+
+*** space
+
+*** wall
+
+*** water fill
+
+*** width
+
+*** zone completion
+
