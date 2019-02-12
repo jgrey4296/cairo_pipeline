@@ -5,7 +5,6 @@ import IPython
 import numpy as np
 from scipy.spatial import ConvexHull
 import cairo_utils as utils
-from .pdraw import PDraw
 
 def create_two_splines(d, opts, data):
     """ Adds 2 splines to the geometry list """
