@@ -3,7 +3,7 @@ Defines a simple colour modifying pipeline layer
 """
 import numpy as np
 import cairo_utils as utils
-from . import constants
+from .. import constants
 
 def hue_rotate(d, opts, data):
     """ Create a gentle variation of colours """
