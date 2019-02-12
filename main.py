@@ -6,12 +6,8 @@ import numpy as np
 import sys
 import time
 import cairo_utils as utils
-import cairo_pipeline as cs
-import cairo_pipeline.call_registries as cr
-import cairo_pipeline.colour_layers as cl
-import cairo_pipeline.geometry_layers as gl
-import cairo_pipeline.noise_layers as nl
-import cairo_pipeline.util_layers as ul
+import cairo_pipeline as cp
+
 #constants
 N = 12
 imgPath = "./imgs/"
@@ -58,75 +54,75 @@ def dist_trans(i, opts, data):
 
 #Drawing:
 # create the drawing object
-d_o = cs.PDraw(ctx, (size, size), surface)
-d_o.register_call('random', cr.simple_random_call)
-d_o.register_call('ease', cr.run_easing)
-d_o.register_call('add_noise', cr.additive_noise)
-d_o.register_call('pop', cr.pop_value)
+d_o = cp.PDraw(ctx, (size, size), surface)
+d_o.register_call('random', cp.calls.random.simple_random_call)
+d_o.register_call('ease', cp.calls.easing.run_easing)
+d_o.register_call('add_noise', cp.calls.random.additive_noise)
+d_o.register_call('pop', cp.calls.value_control.pop_value)
 
-d_o.pipeline([ ul.no_op_layer, {}
-               # , gl.create_two_splines, {}
-               # , gl.create_points, {}
-               # , gl.create_line, {}
-               # , gl.create_lines, { 'num' : 15 }
-               # , gl.create_grid, { 'num': 10 }
-               , gl.create_circle, {}
-               , ul.text_layer, { 'text' : '' }
-               , ul.sample_layer, { 'n' : 3000,
-                                    'r' : 3,
-                                    'colour' : np.array([300, 0.4, 0.4, 0.15]),
-                                    'c_type' : 'hsla',
-                                    'target' : 'circle',
-                                    'choice' : -1}
+d_o.pipeline([ cp.misc.utils.no_op_layer, {}
+               # , cp.dcelp.geometry.create_two_splines, {}
+               # , cp.dcelp.geometry.create_points, {}
+               # , cp.dcelp.geometry.create_line, {}
+               # , cp.dcelp.geometry.create_lines, { 'num' : 15 }
+               # , cp.dcelp.geometry.create_grid, { 'num': 10 }
+               , cp.dcelp.geometry.create_circle, {}
+               , cp.misc.text.text_layer, { 'text' : '' }
+               , cp.misc.sampling.sample_layer, { 'n' : 3000,
+                                             'r' : 3,
+                                             'colour' : np.array([300, 0.4, 0.4, 0.15]),
+                                             'c_type' : 'hsla',
+                                             'target' : 'circle',
+                                             'choice' : -1}
                #--------------------
-               , ul.loop_start_layer, {}
-               , ul.log_layer, { 'message' : 'Loop: {current_loop}' }
+               , cp.misc.repetition.loop_start_layer, {}
+               , cp.misc.text.log_layer, { 'message' : 'Loop: {current_loop}' }
 
-               , ul.skip_layer, { 'type' : 'first' }
-               , ul.rgba_hsla_layer, {}
+               , cp.misc.skip.skip_layer, { 'type' : 'first' }
+               , cp.colour.rgba_hsla_layer, {}
 
-               # , nl.simple_noise, {'scale': [280, 10, 50, -20, 50, 20, -10] }
-               , ul.skip_layer, { 'type' : 'first', 'not' : True, 'skip_num': 2}
-               , nl.granulate_layer, {'rad' : [-utils.constants.QUARTERPI,
+               # , cp.noise.simple_harmonic_noise, {'scale': [280, 10, 50, -20, 50, 20, -10] }
+               , cp.misc.skip.skip_layer, { 'type' : 'first', 'not' : True, 'skip_num': 2}
+               , cp.noise.granulate, {'rad' : [-utils.constants.QUARTERPI,
                                                -utils.constants.QUARTERPI+0.4],
                                       'mult'  : [200,200],
                                       'choice': 0.4}
-               , ul.sample_layer, { 'n' : 500,
+               , cp.misc.sampling.sample_layer, { 'n' : 500,
                                     'r' : 3,
                                     'colour' : np.array([300, 0.4, 0.4, 0.15]),
                                     'c_type' : 'hsla',
                                     'target' : 'line',
                                     'choice' : 0.05}
 
-               # , ul.skip_layer, { 'type' : 'first', 'not' : True, 'skip_num': 1}
-               # , ul.duplicate_layer,  { 'num' : 3}
-               # , ul.wiggle_layer, { 'scale' : [0,2],
+               # , cp.misc.skip.skip_layer, { 'type' : 'first', 'not' : True, 'skip_num': 1}
+               # , cp.misc.utils.duplicate_layer,  { 'num' : 3}
+               # , cp.misc.utils.wiggle_layer, { 'scale' : [0,2],
                #                      'dir' : [0, utils.constants.TWOPI]}
 
-               , cl.hue_rotate, {'easing': 'sigmoid',
+               , cp.colour.hue_rotate, {'easing': 'sigmoid',
                                  'noise_range' : [30,30,-40,-40,25] }
 
-               , ul.hsla_rgba_layer, {}
-               , ul.clear_canvas_layer, { 'clear_colour' : np.array([0,0,0,1]),
+               , cp.colour.hsla_rgba_layer, {}
+               , cp.misc.drawing.clear_canvas_layer, { 'clear_colour' : np.array([0,0,0,1]),
                                           'clear_type' : 'hsla',
                                           'bbox' : np.array([0,0,size,size]) }
 
-               , ul.skip_layer, { 'type' : 'every',
+               , cp.misc.skip.skip_layer, { 'type' : 'every',
                                   'count': 1,
                                   'not' : True}
-               , ul.set_var_layer, { 'draw': True }
+               , cp.misc.utils.set_var_layer, { 'draw': True }
 
-               # , ul.subsample_layer, { 'n': 1000,
+               # , cp.misc.sampling.subsample_layer, { 'n': 1000,
                #                         'sections': 20 }
-               , ul.draw_layer, { 'pixel' : 'circle',
-                                  'saveString' : saveString,
-                                  'draw'  : True}
+               , cp.misc.drawing.draw_layer, { 'pixel' : 'circle',
+                                          'saveString' : saveString,
+                                          'draw'  : True}
 
-               , ul.set_var_layer, { 'clear_colour' : np.array([0,0,0,0]),
+               , cp.misc.utils.set_var_layer, { 'clear_colour' : np.array([0,0,0,0]),
                                      'draw' : False}
-               , ul.loop_layer, { 'max_loops' : 7}
+               , cp.misc.repetition.loop_layer, { 'max_loops' : 7}
                #--------------------
-               , ul.finish_layer, {}
+               , cp.misc.repetition.finish_layer, {}
 ])
 
 
