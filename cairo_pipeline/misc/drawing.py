@@ -1,7 +1,7 @@
 """
 Utilites to draw output
 """
-
+import time
 import numpy as np
 from functools import partial
 from itertools import islice
@@ -16,7 +16,16 @@ def draw_layer(d, opts, data):
     """ Layer that draws the context so far to a file.
     Parameters: push, pixel (square, circle), draw
     """
-    saveString = opts['saveString']
+    imgPath = d._imgPath
+    imgName = opts['imgName']
+    currentTime = time.gmtime()
+    saveString = "{}{}_{}-{}_{}-{}".format(imgPath,
+                                           imgName,
+                                           currentTime.tm_min,
+                                           currentTime.tm_hour,
+                                           currentTime.tm_mday,
+                                           currentTime.tm_mon,
+                                           currentTime.tm_year)
     draw = data['draw']
     drawn = 0
     if 'drawn' in data:
@@ -55,10 +64,15 @@ def clear_canvas_layer(d, opts, data):
     clear_colour = data['clear_colour']
     clear_type   = data['clear_type']
 
+    if 'bbox' not in opts:
+        bbox = np.array([0,0, *d._size])
+    else:
+        bbox = opts['bbox']
+
     if clear_type == 'hsla':
         clear_colour = utils.colour.hsla2rgba(clear_colour.reshape((1,-1)))[0]
 
     utils.drawing.clear_canvas(d._ctx,
                                colour=clear_colour,
-                               bbox=opts['bbox'])
+                               bbox=bbox)
     return data
