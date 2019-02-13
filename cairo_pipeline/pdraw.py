@@ -14,7 +14,7 @@ logging = root_logger.getLogger(__name__)
 class PDraw:
     """ Draws a Pipeline of operations """
 
-    def __init__(self, ctx, sizeTuple, surface):
+    def __init__(self, ctx, sizeTuple, surface, imgPath):
         assert(ctx is not None)
         assert(sizeTuple is not None)
         assert(surface is not None)
@@ -49,6 +49,8 @@ class PDraw:
         # Lookup of Objects associated with basic data
         # eg: _nodes['_core_verts'][1] can hold an object associated with _core_verts[0]
         self._nodes = {}
+        # Location to save images:
+        self._imgPath = imgPath
         # Debug flag for layers:
         self._debug= False
 
