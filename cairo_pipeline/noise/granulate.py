@@ -13,7 +13,7 @@ import logging as root_logger
 logging = root_logger.getLogger(__name__)
 
 
-def granulate_layer(d, opts, data):
+def granulate(d, opts, data):
     """ A Layer to granulate a signal of samples """
     n = data['n']
     rad = opts['rad']
