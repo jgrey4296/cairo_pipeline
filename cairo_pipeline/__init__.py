@@ -6,3 +6,4 @@ from . import growth as growth
 from . import misc as misc
 from . import noise as noise
 from . import vertical_calls as calls
+from . import pipelines as pipelines
