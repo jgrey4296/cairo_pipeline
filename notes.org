@@ -1,66 +1,10 @@
-* Cairo Usage notes
-
-  ** Running
-  make draw=circles
-
-  where the draw arguments are defined in draw_routines.
-** Program Structures
-   main -> draw_routines -> ssClass
-
-   The Main draw class is ssClass (SandSpline)
-   There is the __init__ method, and step methods,
-   with specific draw methods for lines, circles etc
-
-
-* Branches notes
-  Branches is a separate draw routine, that takes starting points,
-  and will grow from each point randomly.
-
-** Growth and branch directions
-   can't be totally random, should be a random variation of a lerp'd vector of the past 3 points
-
-   branch directions should be a/symmetric based on the growth direction
-
-   ** data representation
-
-   rows of: x, y, growthPoint
-
-   ** growthPoint usage
-   growthPoint will start a 0, going up as the growth proceeds.
-   use the growth point to choose branching points, and to steadily decrease the radius of the drawn point
-
-
-   ** distance checking
-   for each new point, check its distance from every other point in a quad tree of local points, 
-   have minimum distances
-
-
-
-** branches -> fingerprints
-   branches could be adapted later to produce fingerprints, growing radially instead of in straight lines?
-
-
-   focus = (a,b)
-   directrix = k
-   wanting all (x,y)s
-
-   1/ (2 * (b-k)) (x-a)^2 = y - ((b+k)/2)
-
-   y = 1/(2*(b-k))(x-a)^2 + ((b+k)/2)
-
-   (x-a)^2 = (x-a)(x-a) = x^2 - 2ax + a^2
-
-
-
 * City Generator Integration notes
   standard pattern of operator setup,
   with a non-deterministic operator sequence
 
   select ->  place -> parameterize -> perform -> verify -> pool mod
+  
 
-
-** heightmap                                                                    :to_utils:
-** misc
 ** operators
 
 *** road
@@ -110,4 +54,9 @@
 *** width
 
 *** zone completion
+
+
+* Operators to create?
+** perlin noise
+** vector field
 
