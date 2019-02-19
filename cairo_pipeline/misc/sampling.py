@@ -33,7 +33,7 @@ def sample_layer(d, opts, data):
     if opts['choice'] != -1:
         target_data = target_data[np.random.choice(target_data.shape[0],
                                                    size=int(len(target_data) * opts['choice'])),
-                                                   :]
+                                  :]
 
     new_samples = utils.umath.sample_wrapper(target_sampler,
                                              target_data[1:],
