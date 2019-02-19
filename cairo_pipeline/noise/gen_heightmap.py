@@ -8,12 +8,7 @@ import logging as root_logger
 logging = root_logger.getLogger(__name__)
 
 def gen_heightmap(d, opts, data):
-    delta = []
-    if not override and 'heightmap' in dc.data:
-        return delta
-
     hm, qhm, edges = heightmap.gen_heightmap_and_edges(opts['size'],
-                                                       opts['subdiv'],
                                                        opts['minheight'],
                                                        opts['layers'],
                                                        oct=opts['octaves'],
@@ -22,5 +17,4 @@ def gen_heightmap(d, opts, data):
                                                        base=opts['base'])
 
     data['heightmap'] = (hm, qhm, edges)
-
-    return delta
+    return data
