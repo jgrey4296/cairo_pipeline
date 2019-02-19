@@ -58,7 +58,7 @@ def create_lines(d, opts, data):
     d.add_lines(scaled)
     return data
 
-def create_grid(d, opts, data):
+def create_grid_lines(d, opts, data):
     """ Creates a set of horizontal lines """
     num = opts['num'] + 2
     y_increment = d._size[1] / num
@@ -88,4 +88,18 @@ def create_circle_graph(d, opts, data):
     #create the nodes
     #create the lines
 
+    return data
+
+
+def create_circle_grid(d, opts, data):
+    gridsize = opts['size']
+    sX = d._size[0]
+    sY = d._size[1]
+    circles = np.zeros((1,utils.constants.CIRCLE_DATA_LEN))
+    for x in np.linspace(0,1,gridsize):
+        for y in np.linspace(0,1,gridsize):
+            xs = x * sX
+            xy = y * sY
+            circles = np.row_stack((circles, np.array([xs, xy, *opts['rad'], *opts['radius']])))
+    d.add_circle(circles[1:])
     return data

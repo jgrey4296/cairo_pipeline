@@ -15,7 +15,7 @@ simple = [
     # , cp.dcelp.geometry.create_points, {}
     # , cp.dcelp.geometry.create_line, {}
     # , cp.dcelp.geometry.create_lines, { 'num' : 15 }
-    # , cp.dcelp.geometry.create_grid, { 'num': 10 }
+    # , cp.dcelp.geometry.create_grid_lines, { 'num': 10 }
     , cp.dcelp.geometry.create_circle, {}
     , cp.misc.text.text_layer, { 'text' : 'basic_pipeline' }
     , cp.misc.sampling.sample_layer, { 'n' : 3000,
