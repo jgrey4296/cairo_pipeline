@@ -30,4 +30,4 @@ surface, ctx, size, n = utils.drawing.setup_cairo(n=N,
 # create the drawing object
 d_o = cp.PDraw(ctx, (size, size), surface, imgPath)
 # Run a selected pipeline:
-d_o.pipeline(cp.pipelines.basic.simple)
+d_o.pipeline(cp.pipelines.heightmap.heightmap_p)
