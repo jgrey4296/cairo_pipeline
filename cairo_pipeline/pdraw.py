@@ -43,8 +43,11 @@ class PDraw:
         self._current = np.zeros((1, utils.constants.SAMPLE_DATA_LEN))
         self._samples = np.zeros((1,utils.constants.SAMPLE_DATA_LEN))
         self._text = []
-        #Registered layers that can be called from within a pipeline layer
-        self._registered_call= {}
+        #Registered crosscuts
+        self._registered_crosscuts= {}
+        self._crosscut_states = {
+            'default' : {}
+            }
 
         # Lookup of Objects associated with basic data
         # eg: _nodes['_core_verts'][1] can hold an object associated with _core_verts[0]
@@ -54,29 +57,50 @@ class PDraw:
         # Debug flag for layers:
         self._debug= False
 
-    def register_call(self, name, func, start_state=None):
-        """ Registers a callable function, and its personal data store """
-        if start_state is None:
-            start_state = {}
-        self._registered_call[name] = (func, start_state)
+    def register_crosscuts(self, pairs, namespace=None, start_state=None):
+        """ Registers a crosscut function, and its personal data store """
+        if namespace is None:
+            namespace = "default"
+        else:
+            if start_state is None:
+                start_state = {}
+            if namespace not in self._crosscut_states:
+                self._crosscut_states[namespace] = start_state
+        pairs = { "{}_{}".format(namespace,k) : v for k,v in pairs.items() }
+        self._registered_crosscuts.update(pairs)
 
-    def call(self, name, args, data=None):
-        """ Calls a registered_call by name, with a dictionary of arguments, and its personal state
+    def has_crosscut(self, key, namespace=None):
+        if namespace is None:
+            namespace = "default"
+        full_name = "{}_{}".format(namespace, key)
+        return full_name in self._registered_crosscuts
+
+    def call_crosscut(self, name, **kwargs):
+        """ Calls a registered crosscut by name, with a dictionary of arguments, and its personal state
         The call returns the result of the calculation, and an updated personal state """
-        func, state = self._registered_call[name]
-        result, new_state, new_data = func(self, args, state, data=data)
-        self.register_call(name, func, new_state)
+        namespace = "default"
+        if 'namespace' in kwargs:
+            namespace = kwargs['namespace']
+        name = "{}_{}".format(namespace,name)
+        state = self._crosscut_states[namespace]
+        func = self._registered_crosscuts[name]
+        result, new_state, new_data = func(self, kwargs, state)
+        self._crosscut_states[namespace] =  new_state
         return (result, new_data)
 
-    def call_state(self, name):
-        return self._registered_call[name][1]
+    def crosscut(self, name, **kwargs):
+        return self.call_crosscut(name, kwargs)
+
+    def crosscut_state(self, name):
+        return self._registered_crosscuts[name][1]
 
     def pipeline(self, pipelines, max_loops=10):
         """ Transforms the drawing in a set of steps """
         data = { 'current_step' : 0,
                  'finish' : False,
                  'current_loop' : 0,
-                 'max_loops' : max_loops}
+                 'max_loops' : max_loops,
+                 'bbox' : np.array([0,0, *self._size])}
         pipe_pairs = list(zip(islice(pipelines, 0, len(pipelines), 2),
                               islice(pipelines, 1, len(pipelines), 2)))
         pipeline_length = len(pipe_pairs)
