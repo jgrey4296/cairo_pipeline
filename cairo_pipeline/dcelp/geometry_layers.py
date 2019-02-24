@@ -6,6 +6,8 @@ import numpy as np
 from scipy.spatial import ConvexHull
 import cairo_utils as utils
 
+#TODO : update to use crosscuts
+
 def create_two_splines(d, opts, data):
     """ Adds 2 splines to the geometry list """
     d.add_bezier(np.array([[d._center[0] - d._size[0]*0.5, d._center[1],
