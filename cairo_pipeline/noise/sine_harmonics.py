@@ -14,36 +14,34 @@ logging = root_logger.getLogger(__name__)
 
 def sine_harmonic_noise(d, opts, data):
     """ Simple Displacement noise using additive sine signals  """
-    n = data['n']
+    vals, data = d.call_crosscut('access',
+                                 lookup={
+                                     'easing' : ['static', 1],
+                                     'n' : 1,
+                                     'random' : ['additive', None],
+                                     'scale' : 1,
+                                 },
+                                 opts=opts, data=data)
+    envelope_args, n, rand_args, scale = vals
+    envelope = d.call_crosscut('access',
+                               namespace='easing',
+                               key=envelope_args[0],
+                               opts=opts, data=data)
+
     samples = d._samples[1:].reshape((-1, n, utils.constants.SAMPLE_DATA_LEN))
     result = np.zeros((1,utils.constants.SAMPLE_DATA_LEN))
 
-    if 'test_displace_scale' in data:
-        scales = data['test_displace_scale']
-    else:
-        scales = opts['scale']
-    scale = 0
-    if bool(scales):
-        scale = scales.pop(0)
-    data['test_displace_scale'] = scales
-
-    envelope = utils.easings.lookup('pow_max_abs')(np.linspace(-1,1,n), 3.5).reshape((n,1))
+    env = envelope(np.linspace(0,1,n))
 
     for i, sample_set in enumerate(samples):
         xys = sample_set[:,:2]
         rst = sample_set[:,2:]
-        base_freq, discard = d.call('random', { 'range': [2,3], 'shape': (1,1) })
-        noise, discard = d.call('add_noise', {
-            'base_freq'  : base_freq,
-            'harmonics'  : [1, 1.5, 2, 4],
-            'amplitudes' : [1, 0.5, 0.8, 0.6],
-            'phases'     : np.zeros(4),
-            'easing'     : ['sigmoid', 2],
-            'offmul'     : [1, utils.constants.TWOPI],
-            'n'          : n
-        })
-        rot =  envelope * np.column_stack((np.cos(noise), np.sin(noise))) * scale
-        # rot = np.column_stack((np.zeros((n,1)), noise)) * 200
+        noise, discard = d.call_crosscut( rand_args[0],
+                                          namespace='random',
+                                          args=rand_args[1],
+                                          shape=xys.shape,
+                                          opts=opts, data=data)
+        rot = env * np.column_stack((np.cos(noise), np.sin(noise))) * scale
         transformed = xys + rot
         recombined = np.column_stack((transformed, rst))
         result = np.row_stack((result, recombined))
