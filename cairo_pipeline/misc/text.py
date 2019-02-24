@@ -15,11 +15,13 @@ def text_layer(d, opts, data):
     """ Layer that registers text to be drawn.
     Parameters: colour, text
     """
-    colour = [1,1,1,1]
-    if 'colour' in opts:
-        colour = opts['colour']
-
-    d.add_text(opts['text'],
+    vals, data = d.call_crosscut('access',
+                                 lookup={'colour': np.array([1,1,1,1]),
+                                         'text' : 'Default Text'},
+                                 opts=opts, data=data)
+    colour, text= vals
+    logging.info("text: {}".format(text))
+    d.add_text(text.format(**data),
                [d._size[0]*0.1,
                 d._size[1]*0.05],
                d._size[0]*0.02,
