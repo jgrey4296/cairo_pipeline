@@ -7,18 +7,40 @@ from .. import constants
 
 def hue_rotate(d, opts, data):
     """ Create a gentle variation of colours """
-    assert(data['c_type'] == 'hsla')
-    n = data['n']
-    easing = utils.easings.lookup(opts['easing'])
+    vals, data = d.call_crosscut('access',
+                                 lookup={
+                                     'easing' : ['linear', [0]],
+                                     'n' : 5,
+                                     'random' : ['uniform', {}]
+                                 },
+                                 opts=opts, data=data)
+    easing_args, n, random_args= vals
+    rotation, new_data = d.call_crosscut('pop',
+                                         key='noise_range',
+                                         opts=opts, data=data)
+
+
+    rand_range=[rotation-(rotation*0.5),rotation]
+    easing = d.call_crosscut('access',
+                             key=easing_args[0],
+                             params=easing_args[1],
+                             namespace='easing',
+                             opts=opts, data=data)
     samples = d._samples[1:].reshape((-1, n, utils.constants.SAMPLE_DATA_LEN))
-    rotation, new_data = d.call('pop', { 'var': 'noise_range', 'opts': opts}, data)
     results = np.zeros((1, utils.constants.SAMPLE_DATA_LEN))
 
     for sample_set in samples:
         non_colour = sample_set[:, :-utils.constants.COLOUR_SIZE]
         colours = sample_set[:, -utils.constants.COLOUR_SIZE:]
 
-        noise, discard= d.call('random', { 'range' : [rotation-(rotation*0.5),rotation], 'shape': (n,1)})
+        noise, discard= d.call_crosscut('call',
+                                        key=random_args[0],
+                                        shape=(n,1),
+                                        params=random_args[1],
+                                        namespace='random',
+                                        opts=opts, data=data)
+        noise_scales = rand_range[1] + (rand_range[0] * noise)
+
         zeros = np.zeros((n,3))
         n_zzz = np.column_stack((noise, zeros))
         colours += n_zzz
