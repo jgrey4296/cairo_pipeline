@@ -8,13 +8,29 @@ import logging as root_logger
 logging = root_logger.getLogger(__name__)
 
 def gen_heightmap(d, opts, data):
-    hm, qhm, edges = heightmap.gen_heightmap_and_edges(opts['size'],
-                                                       opts['minheight'],
-                                                       opts['layers'],
-                                                       oct=opts['octaves'],
-                                                       repeatx=opts['repeatx'],
-                                                       repeaty=opts['repeaty'],
-                                                       base=opts['base'])
+    vals, data = d.call_crosscut('access',
+                                 lookup={
+                                     'base'  : 1,
+                                     'layers': 5 ,
+                                     'minheight':  0,
+                                     'octaves':  3,
+                                     'repeat':  100,
+                                     'size':  5
+                                 },
+                                 opts=opts, data=data)
+    base, layers, minheight, octaves, repeat, size = vals
 
-    data['heightmap'] = (hm, qhm, edges)
+    hm, qhm, edges = heightmap.gen_heightmap_and_edges( size,
+                                                        minheight,
+                                                        layers,
+                                                        oct=octaves,
+                                                        repeatx=repeat[0],
+                                                        repeaty=repeat[1],
+                                                        base=base)
+
+    no_val, data = d.call_crosscut('store', pairs={ 'heightmap' : hm,
+                                                    'quantized_heightmap' : qhm,
+                                                    'edge_heightmap' : edges },
+                                   target='data',
+                                   data=data)
     return data
