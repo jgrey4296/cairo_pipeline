@@ -17,7 +17,17 @@ def draw_layer(d, opts, data):
     Parameters: push, pixel (square, circle), draw
     """
     imgPath = d._imgPath
-    imgName = opts['imgName']
+    vals, data = d.call_crosscut('access',
+                                 lookup={
+                                     'draw': True,
+                                     'drawn' : 0,
+                                     'imgName' :  'pipeline_test',
+                                     'pixel' : 'circle',
+                                     'push' : False,
+                                     'subsample' : False,
+                                 },
+                                 opts=opts, data=data)
+    draw, drawn, imgName, pixel, push, subsample = vals
     currentTime = time.gmtime()
     saveString = "{}{}_{}-{}_{}-{}".format(imgPath,
                                            imgName,
@@ -26,48 +36,46 @@ def draw_layer(d, opts, data):
                                            currentTime.tm_mday,
                                            currentTime.tm_mon,
                                            currentTime.tm_year)
-    draw = data['draw']
-    drawn = 0
-    if 'drawn' in data:
-        drawn = data['drawn']
 
-    if 'push' in opts:
+    if push:
         d._ctx.save()
 
-    if opts['pixel'] == 'square':
+    if pixel == 'square':
         utils.drawing.draw_rect(d._ctx, d._samples)
     else:
         utils.drawing.draw_circle(d._ctx, d._samples)
 
-    if 'subsample' in data:
-        if opts['pixel'] == 'square':
-            utils.drawing.draw_rect(d._ctx, data['subsample'])
+    if subsample:
+        if pixel == 'square':
+            utils.drawing.draw_rect(d._ctx, subsample)
         else:
-            utils.drawing.draw_circle(d._ctx, data['subsample'])
+            utils.drawing.draw_circle(d._ctx, subsample)
 
     d.draw_text()
-    if 'push' in opts:
+    if push:
         d._ctx.restore()
 
     if draw:
+        logging.info("DRAWING {}: {}".format(drawn, saveString))
         utils.drawing.write_to_png(d._surface, saveString, i=drawn)
-        data['drawn'] = drawn + 1
+        no_val, data = d.call_crosscut('store',
+                                       pairs={'drawn': drawn+1},
+                                       target='data',
+                                       data=data)
     return data
 
 def clear_canvas_layer(d, opts, data):
     """ Layer that calls clear_canvas
     Parameters: clear_colour, clear_type, bbox
     """
-    if 'clear_colour' not in data:
-        data['clear_colour'] = opts['clear_colour']
-        data['clear_type']   = opts['clear_type']
-    clear_colour = data['clear_colour']
-    clear_type   = data['clear_type']
-
-    if 'bbox' not in opts:
-        bbox = np.array([0,0, *d._size])
-    else:
-        bbox = opts['bbox']
+    vals, data = d.call_crosscut('access',
+                                 lookup={
+                                     'bbox' : False,
+                                     'clear_colour' : np.array([0,0,0,1]),
+                                     'clear_type' : 'hsla',
+                                 },
+                                 opts=opts, data=data)
+    bbox, clear_colour, clear_type = vals
 
     if clear_type == 'hsla':
         clear_colour = utils.colour.hsla2rgba(clear_colour.reshape((1,-1)))[0]
