@@ -12,18 +12,19 @@ def skip_layer(d, opts, data):
     """ Layer that skips over layers that come after it.
     Parameters: type (first, every), skip_num
     """
+    vals, data = d.call_crosscut('access',
+                                 lookup={'count' : 5,
+                                         'current_loop' : 0,
+                                         'not' : False,
+                                         'skip_num' : 1,
+                                         'type' : 'first'},
+                                 opts=opts, data=data)
+    count, current_loop, invert, skip_num, skip_type = vals
 
-    first = opts['type'] == 'first'
-    is_first = data['current_loop'] == 0
-    every = opts['type'] == 'every'
-    count = 5
-    if 'count' in opts:
-        count = opts['count']
-    is_count_loop = (data['current_loop'] % count) == 0
-    invert = 'not' in opts and opts['not']
-    skip_num = 1
-    if 'num' in opts:
-        skip_num = opts['skip_num']
+    first = skip_type == 'first'
+    every = skip_type == 'every'
+    is_first = current_loop == 0
+    is_count_loop = (current_loop % count) == 0
 
     if (first and not invert and is_first) \
        or (first and invert and not is_first) \
