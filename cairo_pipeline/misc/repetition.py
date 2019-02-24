@@ -22,8 +22,12 @@ def _repeat_layer(layers, d, opts, data):
     pipe_pairs = list(zip(islice(layers, 0, len(layers), 2),
                           islice(layers, 1, len(layers), 2)))
     pipeline_length = len(pipe_pairs)
+    vals, data = d.call_crosscut('access',
+                                 lookup={'num': 1},
+                                 opts=opts, data=data)
+    num = vals[0]
     the_data = data
-    for i in range(opts['num']):
+    for i in range(num):
         for l,o in pipe_pairs:
             logging.info("Looping Layer: {}".format(l.__name__))
             the_data = l(d, o, the_data)
@@ -42,9 +46,14 @@ def _repeat_transform_layer(layers, d, opts, data):
     pipe_pairs = list(zip(islice(layers, 0, len(layers), 2),
                           islice(layers, 1, len(layers), 2)))
     pipeline_length = len(pipe_pairs)
+    vals, data = d.call_crosscut('access',
+                                 lookup={'num' : 1,
+                                         'transform' : lambda x, o, d: x},
+                                 opts=opts, data=data)
+    num, transform = vals
+
     the_data = data
-    transform = opts['transform']
-    for i in range(opts['num']):
+    for i in range(num):
         for l,o in pipe_pairs:
             o_t = transform(i,o,data)
             logging.info("Looping Layer: {}".format(l.__name__))
@@ -72,26 +81,51 @@ def _conditional_repeat_layer(cond, layers, d, opts, data):
 
 def loop_start_layer(d, opts, data):
     """ Layer that sets where a loop returns to """
-    data['return_to_step'] = data['current_step']
+    no_val, data = d.call_crosscut('store',
+                                   pairs={'return_to_step' : data['current_step']},
+                                   target='data',
+                                   data=data)
     return data
 
 def loop_layer(d, opts, data):
     """ Layer that triggers a loop
     Parameters: max_loops
     """
-    if 'max_loops' in opts:
-        data['max_loops'] = opts['max_loops']
-    if data['current_loop'] < data['max_loops']:
-        data['current_step'] = data['return_to_step'] - 1
-        data['current_loop'] += 1
+    vals, data = d.call_crosscut('access',
+                                 lookup={
+                                     'current_loop' : 0,
+                                     'max_loops': 5,
+                                     'return_to_step': 0 },
+                                 opts=opts, data=data)
+    current_loop, max_loops, return_to_step = vals
+
+    if current_loop < max_loops:
+        no_val, data = d.call_crosscut('store',
+                                       pairs={'current_loop' : current_loop + 1,
+                                              'current_step' : return_to_step - 1},
+                                       target='data',
+                                       data=data)
+
     return data
 
 def clear_loop_layer(d, opts, data):
     """ Layer that resets the loop count """
-    data['current_loop'] = 0
+
+    no_val, data = d.call_crosscut('store',
+                                   pairs={ 'current_loop' : 0 },
+                                   target='data',
+                                   data=data)
     return data
 
 def finish_layer(d, opts, data):
     """ Layer that forces the pipeline to stop """
-    data['finish'] = True
+    vals, data = d.call_crosscut('access',
+                                 lookup={ 'max_loops' : 10 },
+                                 opts=opts, data=data)
+
+    no_val, data = d.call_crosscut('store',
+                                   pairs={ 'finish' : True,
+                                           'current_loop' : vals[0] + 1 },
+                                   target='data',
+                                   data=data)
     return data
