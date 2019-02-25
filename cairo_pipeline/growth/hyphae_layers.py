@@ -18,15 +18,11 @@ import pyqtree
 
 logging = root_logger.getLogger(__name__)
 
-def setup_hyphae(d, opts, data):
+def setup_hyphae(d, opts):
 
-    return data
-
-
+    return None
 
 
+def grow_hyphae(d, opts):
 
-
-def grow_hyphae(d, opts, data):
-
-    return data
+    return None

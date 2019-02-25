@@ -8,25 +8,24 @@ import logging as root_logger
 logging = root_logger.getLogger(__name__)
 
 
-def hsla_rgba_layer(d, opts, data):
+def hsla_rgba_layer(d, opts):
     """ Layer that converts hsla format colour samples, to rgba """
-    vals, data = d.call_crosscut('access',
+    vals = d.call_crosscut('access',
                                  lookup={ 'c_type' : 'hsla' } ,
-                                 opts=opts, data=data)
+                                 opts=opts)
     assert(vals[0] == 'hsla')
     samples = d._samples[:,:-4]
     colours = d._samples[:,-4:]
 
     rgba_ed = hsla2rgba(colours)
     d._samples = np.column_stack((samples, rgba_ed))
-    no_val, data = d.call_crosscut('store', pairs={'c_type' : 'rgba' },
-                                   target='data', data=data)
-    return data
+    d.call_crosscut('store', pairs={'c_type' : 'rgba' },
+                    target='data')
 
-def rgba_hsla_layer(d, opts, data):
-    vals, data = d.call_crosscut('access',
+def rgba_hsla_layer(d, opts):
+    vals = d.call_crosscut('access',
                                  lookup={ 'c_type' : 'rbga' },
-                                 opts=opts, data=data)
+                                 opts=opts)
     assert(vals[0] == 'rgba')
     """ Layer that converts rgba format colour samples, to hsla """
     samples = d._samples[:,:-4]
@@ -34,6 +33,5 @@ def rgba_hsla_layer(d, opts, data):
 
     hsla_ed = rgba2hsla(colours)
     d._samples = np.column_stack((samples, hsla_ed))
-    no_val, data = d.call_crosscut('store', pairs={'c_type' : 'hsla' },
-                                   target='data', data=data)
-    return data
+    d.call_crosscut('store', pairs={'c_type' : 'hsla' },
+                    target='data')

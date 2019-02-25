@@ -12,12 +12,12 @@ import IPython
 import logging as root_logger
 logging = root_logger.getLogger(__name__)
 
-def draw_layer(d, opts, data):
+def draw_layer(d, opts):
     """ Layer that draws the context so far to a file.
     Parameters: push, pixel (square, circle), draw
     """
     imgPath = d._imgPath
-    vals, data = d.call_crosscut('access',
+    vals = d.call_crosscut('access',
                                  lookup={
                                      'draw': True,
                                      'drawn' : 0,
@@ -26,7 +26,7 @@ def draw_layer(d, opts, data):
                                      'push' : False,
                                      'subsample' : False,
                                  },
-                                 opts=opts, data=data)
+                                 opts=opts)
     draw, drawn, imgName, pixel, push, subsample = vals
     currentTime = time.gmtime()
     saveString = "{}{}_{}-{}_{}-{}".format(imgPath,
@@ -58,23 +58,21 @@ def draw_layer(d, opts, data):
     if draw:
         logging.info("DRAWING {}: {}".format(drawn, saveString))
         utils.drawing.write_to_png(d._surface, saveString, i=drawn)
-        no_val, data = d.call_crosscut('store',
+        no_val = d.call_crosscut('store',
                                        pairs={'drawn': drawn+1},
-                                       target='data',
-                                       data=data)
-    return data
+                                       target='data')
 
-def clear_canvas_layer(d, opts, data):
+def clear_canvas_layer(d, opts):
     """ Layer that calls clear_canvas
     Parameters: clear_colour, clear_type, bbox
     """
-    vals, data = d.call_crosscut('access',
+    vals = d.call_crosscut('access',
                                  lookup={
                                      'bbox' : False,
                                      'clear_colour' : np.array([0,0,0,1]),
                                      'clear_type' : 'hsla',
                                  },
-                                 opts=opts, data=data)
+                                 opts=opts)
     bbox, clear_colour, clear_type = vals
 
     if clear_type == 'hsla':
@@ -83,4 +81,3 @@ def clear_canvas_layer(d, opts, data):
     utils.drawing.clear_canvas(d._ctx,
                                colour=clear_colour,
                                bbox=bbox)
-    return data

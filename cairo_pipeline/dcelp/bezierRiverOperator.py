@@ -19,15 +19,14 @@ logging = root_logger.getLogger(__name__)
 
 INTERPOLATION = 'cubic'
 
-def select_river_sides(d, opts, data):
+def select_river_sides(d, opts):
 
-    return data
+    return None
 
+def claim_river_space(d, opts):
 
-def claim_river_space(d, opts, data):
+    return None
 
-    return data
+def fill_lowland(d, opts):
 
-def fill_lowland(d, opts, data):
-
-    return data
+    return None

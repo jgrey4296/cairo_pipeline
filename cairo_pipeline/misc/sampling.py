@@ -10,11 +10,11 @@ import IPython
 import logging as root_logger
 logging = root_logger.getLogger(__name__)
 
-def sample_layer(d, opts, data):
+def sample_layer(d, opts):
     """ Layer that samples a specific set of geometry
     Parameters: n, r, colour, target, choice, easing
     """
-    vals, data = d.call_crosscut('access',
+    vals = d.call_crosscut('access',
                         lookup={
                             'c_type': 'hsla',
                             'choice': False,
@@ -25,19 +25,19 @@ def sample_layer(d, opts, data):
                             'random': ['uniform', {}],
                             'target': 'circle',
                         },
-                        opts=opts , data=data)
+                        opts=opts)
     c_type, choice, colour, easing, n, r, random_params, target = vals
-    random, data = d.call_crosscut('access',
+    random = d.call_crosscut('access',
                                    namespace='random',
                                    key=random_params[0],
                                    params=random_params[1],
-                                   opts=opts, data=data)
+                                   opts=opts)
     #TODO: Change this to crosscuts
     target_data = d._geometry[target]
     target_sampler = constants.SAMPLER_LOOKUP[target]
 
     if len(target_data) < 1:
-        return data
+        return None
 
     if choice:
         target_data = target_data[choice(target_data.shape[0]), :]
@@ -57,16 +57,13 @@ def sample_layer(d, opts, data):
 
     d.call_crosscut('store', pairs={'n': n,
                                     'c_type' : c_type },
-                    target='data', data=data)
+                    target='data')
 
-    return data
-
-def subsample_layer(d, opts, data):
-    vals, data = d.call_crosscut('access',
+def subsample_layer(d, opts):
+    vals = d.call_crosscut('access',
                                  lookup={'n': 5,
                                          'sections': 1},
-                                 opts=opts,
-                                 data=data)
+                                 opts=opts)
     n, sections = vals
     sections += 1
 
@@ -84,5 +81,4 @@ def subsample_layer(d, opts, data):
             combined = np.column_stack((i_xys[:best_length], rst_segment[:best_length]))
             subsample = np.row_stack((subsample, combined))
 
-    data['subsample'] = subsample
-    return data
+    d.set_data({'subsample' : subsample})

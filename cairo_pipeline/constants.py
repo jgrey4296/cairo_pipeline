@@ -16,7 +16,8 @@ MAX_LAYER_LOOP = 100
 SAMPLER_LOOKUP = {
     'line': umath.sample_along_lines,
     'circle': lambda x, c, easing=None, random=None: umath.sample_circle(x,
-                                                                         c,sort_rads=False,
+                                                                         c,
+                                                                         sort_rads=True,
                                                                          sort_radi=False,
                                                                          easing=easing,
                                                                          random=random),

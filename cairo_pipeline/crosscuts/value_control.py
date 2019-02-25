@@ -9,7 +9,7 @@ import IPython
 def pop_value(d, args, state):
     """ Initialise a list in persistent data, then pop off it """
     key= args['key']
-    data = args['data']
+    data = d.data()
     opts = args['opts']
     current_step = data['current_step']
     data_key = "{}_{}".format(current_step, key)
@@ -23,14 +23,32 @@ def pop_value(d, args, state):
     else:
         value = the_list[0]
 
-    data[data_key] = the_list
-    return (value, state, data)
+    d.set_data({data_key: the_list})
+    return (value, state)
 
+
+def cycle_value(d, args, state):
+    """ Initialise a list in persistent data, then pop off it """
+    key= args['key']
+    data = d.data()
+    opts = args['opts']
+    current_step = data['current_step']
+    data_key = "{}_{}".format(current_step, key)
+    if data_key in data:
+        the_list = data[data_key]
+    else:
+        the_list = opts[key]
+
+    value = the_list.pop(0)
+    the_list.append(value)
+
+    d.set_data({data_key : the_list})
+    return (value, state)
 
 def value_access(d, args, state):
     """ Get a value from a pdraw's data, or a layers opts,
     with preference """
-    data = args['data']
+    data = d.data()
     keys = args['lookup']
     opts = args['opts']
     #fallback order
@@ -49,12 +67,12 @@ def value_access(d, args, state):
                 vals.append(x[k])
                 found = True
                 break
-    return (vals, state, data)
+    return (vals, state)
 
 
 def value_store(d, args, state):
     """ Store a value in the data or state """
-    data = args['data']
+    data = d.data()
     the_dict = args['pairs']
     target = args['target']
 
@@ -65,4 +83,4 @@ def value_store(d, args, state):
         for k,v in the_dict.items():
             data[k] = v
 
-    return (None, state, data)
+    return (None, state)

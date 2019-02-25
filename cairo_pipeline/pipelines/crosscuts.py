@@ -5,6 +5,7 @@ import numpy as np
 
 standard = [ cp.misc.text.log_layer, { 'message' : 'Setting up crosscuts and random' }
              , cp.crosscuts.register_crosscuts, { 'pairs' : { 'pop' : cc.value_control.pop_value,
+                                                              'cycle' : cc.value_control.cycle_value,
                                                               'access' : cc.value_control.value_access,
                                                               'store' : cc.value_control.value_store }}
 

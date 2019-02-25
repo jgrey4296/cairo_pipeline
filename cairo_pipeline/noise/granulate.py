@@ -13,9 +13,9 @@ import logging as root_logger
 logging = root_logger.getLogger(__name__)
 
 
-def granulate(d, opts, data):
+def granulate(d, opts):
     """ A Layer to granulate a signal of samples """
-    vals, data = d.call_crosscut('access',
+    vals = d.call_crosscut('access',
                                  lookup={
                                      'dist_range' : [0,1],
                                      'n'    : 5,
@@ -23,7 +23,7 @@ def granulate(d, opts, data):
                                      'rad_range'  : [0, 3.142],
                                      'random' : ['uniform', {}],
                                  },
-                                 opts=opts, data=data)
+                                 opts=opts)
     dist_range, n, override_dir, rad_range, random_args= vals
 
     samples = d._samples[1:].reshape((-1, n, utils.constants.SAMPLE_DATA_LEN))
@@ -39,12 +39,12 @@ def granulate(d, opts, data):
         rst = sample_set[:,2:]
         ds = xys[:-1] - xys[1:]
         dirs = np.arctan2(ds[:,1], ds[:,0])
-        noise, data = d.call_crosscut('call',
+        noise = d.call_crosscut('call',
                                       namespace='random',
                                       key=random_args[0],
                                       params=random_args[1],
                                       shape=dirs.shape,
-                                      opts=opts, data=data)
+                                      opts=opts)
         #TODO: Standardize scaling
         rads = rad_range[0] + (rad_range[1] * noise)
         dirs_prime = dirs + rads
@@ -54,11 +54,10 @@ def granulate(d, opts, data):
                                           key=random_args[0],
                                           params=random_args[1],
                                           shape=rot_vector.shape,
-                                          opts=opts, data=data)
+                                          opts=opts)
         rand_dist = dist_range[0] + (noise * dist_range[1])
         scaled_rot = rot_vector * rand_dist
         grain_line = np.column_stack((xys[:-1], xys[:-1] + scaled_rot))
         result = np.row_stack((result, grain_line))
 
     d.add_lines(result)
-    return data

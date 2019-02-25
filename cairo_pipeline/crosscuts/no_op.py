@@ -8,4 +8,4 @@ logging = root_logger.getLogger(__name__)
 def no_op_call(d, args, state):
     """ A simple call that does nothing """
 
-    return (None, state, args['data'])
+    return (None, state)

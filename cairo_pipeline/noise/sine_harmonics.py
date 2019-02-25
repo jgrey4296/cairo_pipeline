@@ -12,21 +12,21 @@ import logging as root_logger
 logging = root_logger.getLogger(__name__)
 
 
-def sine_harmonic_noise(d, opts, data):
+def sine_harmonic_noise(d, opts):
     """ Simple Displacement noise using additive sine signals  """
-    vals, data = d.call_crosscut('access',
+    vals = d.call_crosscut('access',
                                  lookup={
                                      'easing' : ['static', 1],
                                      'n' : 1,
                                      'random' : ['additive', None],
                                      'scale' : 1,
                                  },
-                                 opts=opts, data=data)
+                                 opts=opts)
     envelope_args, n, rand_args, scale = vals
     envelope = d.call_crosscut('access',
                                namespace='easing',
                                key=envelope_args[0],
-                               opts=opts, data=data)
+                               opts=opts)
 
     samples = d._samples[1:].reshape((-1, n, utils.constants.SAMPLE_DATA_LEN))
     result = np.zeros((1,utils.constants.SAMPLE_DATA_LEN))
@@ -36,16 +36,14 @@ def sine_harmonic_noise(d, opts, data):
     for i, sample_set in enumerate(samples):
         xys = sample_set[:,:2]
         rst = sample_set[:,2:]
-        noise, discard = d.call_crosscut( rand_args[0],
+        noise = d.call_crosscut( rand_args[0],
                                           namespace='random',
                                           args=rand_args[1],
                                           shape=xys.shape,
-                                          opts=opts, data=data)
+                                          opts=opts)
         rot = env * np.column_stack((np.cos(noise), np.sin(noise))) * scale
         transformed = xys + rot
         recombined = np.column_stack((transformed, rst))
         result = np.row_stack((result, recombined))
 
     d._samples = result
-    return data
-
