@@ -23,6 +23,7 @@ class PDraw:
         self._surface = surface
         self._size = sizeTuple
         self._center = (sizeTuple[0] * 0.5, sizeTuple[1] * 0.5)
+        self._data = {}
         #More Complex shapes
         self._geometry = {
             'points' : np.zeros((1,utils.constants.SAMPLE_DATA_LEN)),
@@ -57,6 +58,12 @@ class PDraw:
         # Debug flag for layers:
         self._debug= False
 
+    def data(self):
+        return self._data
+
+    def set_data(self, data):
+        self._data.update(data)
+
     def register_crosscuts(self, pairs, namespace=None, start_state=None):
         """ Registers a crosscut function, and its personal data store """
         if namespace is None:
@@ -84,9 +91,9 @@ class PDraw:
         name = "{}_{}".format(namespace,name)
         state = self._crosscut_states[namespace]
         func = self._registered_crosscuts[name]
-        result, new_state, new_data = func(self, kwargs, state)
+        result, new_state = func(self, kwargs, state)
         self._crosscut_states[namespace] =  new_state
-        return (result, new_data)
+        return result
 
     def crosscut(self, name, **kwargs):
         return self.call_crosscut(name, kwargs)
@@ -96,26 +103,24 @@ class PDraw:
 
     def pipeline(self, pipelines, max_loops=10):
         """ Transforms the drawing in a set of steps """
-        data = { 'current_step' : 0,
+        self.set_data({ 'current_step' : 0,
                  'finish' : False,
                  'current_loop' : 0,
                  'max_loops' : max_loops,
-                 'bbox' : np.array([0,0, *self._size])}
+                 'bbox' : np.array([0,0, *self._size])})
+
         pipe_pairs = list(zip(islice(pipelines, 0, len(pipelines), 2),
                               islice(pipelines, 1, len(pipelines), 2)))
+
         pipeline_length = len(pipe_pairs)
-        while data['current_step'] < pipeline_length and not data['finish']:
-            #####
-            x, opts = pipe_pairs[data['current_step']]
+        while self._data['current_step'] < pipeline_length and not self._data['finish']:
+            x, opts = pipe_pairs[self._data['current_step']]
             if hasattr(x, '__name__'):
                 logging.info("Running Layer: ({}) {}".format(len(self._samples), x.__name__))
             else:
                 logging.info("Running Anonymous Layer")
-            data = x(self, opts, data)
-            data['current_step'] += 1
-            ####
-
-        return data
+            x(self, opts)
+            self._data['current_step'] += 1
 
     #------------------------------
 	# def Draw Primitives
