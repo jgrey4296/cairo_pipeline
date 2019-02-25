@@ -33,19 +33,20 @@ simple = [
     , cp.colour.rgba_hsla_layer, {}
 
     # , cp.noise.simple_harmonic_noise, {'scale': [280, 10, 50, -20, 50, 20, -10] }
-    , cp.misc.skip.skip_layer, { 'type' : 'first', 'not' : True, 'skip_num': 2}
+    # , cp.misc.skip.skip_layer, { 'type' : 'first', 'not' : True, 'skip_num': 2}
     , cp.misc.utils.wiggle_layer, { 'scale' : [0, 50],
-                                    'dir' : [0, utils.constants.TWOPI * 0.1]}
+                                    'dir' : [0, utils.constants.TWOPI]}
 
     , cp.colour.hue_rotate, {'easing': ('sigmoid', [0]),
-                             'noise_range' : [30,30,-40,-40,25] }
+                             'noise_range_min' : [10],
+                             'noise_range_max'  : [30]}
 
     , cp.colour.hsla_rgba_layer, {}
     , cp.misc.drawing.clear_canvas_layer, { 'clear_colour' : np.array([0,0,0,1]),
                                             'clear_type' : 'hsla' }
 
     , cp.misc.skip.skip_layer, { 'type' : 'every',
-                                 'count': 5,
+                                 'count': 3,
                                  'not' : True}
     , cp.misc.utils.set_var_layer, { 'draw': True }
 
