@@ -17,8 +17,8 @@ SAMPLER_LOOKUP = {
     'line': umath.sample_along_lines,
     'circle': lambda x, c, easing=None, random=None: umath.sample_circle(x,
                                                                          c,
-                                                                         sort_rads=True,
-                                                                         sort_radi=False,
+                                                                         sort_rads=False,
+                                                                         sort_radi=True,
                                                                          easing=easing,
                                                                          random=random),
     'bezier' : umath.bezier2cp
