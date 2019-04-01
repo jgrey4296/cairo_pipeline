@@ -28,10 +28,10 @@ def sample_layer(d, opts):
                         opts=opts)
     c_type, choice, colour, easing, n, r, random_params, target = vals
     random = d.call_crosscut('access',
-                                   namespace='random',
-                                   key=random_params[0],
-                                   params=random_params[1],
-                                   opts=opts)
+                             namespace='random',
+                             key=random_params[0],
+                             params=random_params[1],
+                             opts=opts)
     #TODO: Change this to crosscuts
     target_data = d._geometry[target]
     target_sampler = constants.SAMPLER_LOOKUP[target]
@@ -42,6 +42,10 @@ def sample_layer(d, opts):
     if choice:
         target_data = target_data[choice(target_data.shape[0]), :]
 
+    # new_samples = d.call_crosscut('call',
+    #                               namespace='geometry',
+    #                               key=target,
+    #                               params=
     new_samples = utils.umath.sample_wrapper(target_sampler,
                                              target_data[1:],
                                              n,
