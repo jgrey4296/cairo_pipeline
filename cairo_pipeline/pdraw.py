@@ -56,7 +56,7 @@ class PDraw:
         # Location to save images:
         self._imgPath = imgPath
         # Debug flag for layers:
-        self._debug= False
+        self._debug = False
 
     def data(self):
         return self._data
@@ -123,7 +123,7 @@ class PDraw:
             self._data['current_step'] += 1
 
     #------------------------------
-	# def Draw Primitives
+	# def add Primitives
 	#------------------------------
 
     def add_points(self, points):
