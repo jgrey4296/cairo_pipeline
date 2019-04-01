@@ -7,39 +7,35 @@ logging = root_logger.getLogger(__name__)
 
 #call as a key, a shape, and a dict of params
 
+NAMESPACE='random'
+
 #Layer to setup crosscuts
 def setup(d, opts):
     """ Layer : random_setup
-    Registers Crosscuts, in a namespace
-
-    """
+    Registers Crosscuts, in a namespace """
     seed = None
     if 'seed' in opts:
         seed = opts['seed']
     state = {'state' : np.random.RandomState(seed)}
     if 'start_state' in opts:
         state.update(opts['start_state'])
-    if not d.has_crosscut('access',  namespace='random'):
+    if not d.has_crosscut('access',  namespace=NAMESPACE):
         d.register_crosscuts({'access' : accessor,
                               'call' : call,
                               'reseed' : reseed },
-                             namespace="random",
+                             namespace=NAMESPACE,
                              start_state=state)
-    d.register_crosscuts(opts['pairs'], namespace="random" )
+    d.register_crosscuts(opts['pairs'], namespace=NAMESPACE)
 
 def accessor(d, args, state):
-    """ Crosscut :  random accessor
-
-    """
+    """ Crosscut :  random accessor """
     #get the algorithm
-    func = d._registered_crosscuts["random_{}".format(args['key'])]
+    func = d._registered_crosscuts["{}_{}".format(NAMESPACE, args['key'])]
     value = partial(func, state['state'], params=args['params'])
     return (value, state)
 
 def call(d, args, state):
-    """ Crosscut :  call a registered random generator
-
-    """
+    """ Crosscut :  call a registered random generator """
     #get the algorithm
     func, state = accessor(d, args, state)
     #call it
@@ -47,7 +43,7 @@ def call(d, args, state):
     return (values, state)
 
 def reseed(d, args, state):
-    r_state = d._crosscut_states['random']['state']
+    r_state = d._crosscut_states[NAMESPACE]['state']
     r_state.seed(shape)
     return (value, state)
 
@@ -80,7 +76,6 @@ def additive(state, shape=None, params=None):
     if params is not None:
         default_params.update(params)
     offset, mul = default_params['offmul']
-
     ts = np.linspace(0,utils.constants.TWOPI, shape[1])
 
     result = np.zeros((1, shape[1]))
