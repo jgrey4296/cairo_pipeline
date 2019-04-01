@@ -5,57 +5,6 @@
   select ->  place -> parameterize -> perform -> verify -> pool mod
   
 
-** operators
-
-*** road
-
-*** building
-
-*** selection
-
-*** flow
-
-*** destroy
-
-*** deadend
-
-*** crossing
-
-*** clone
-
-*** bisect
-
-*** bezier river
-
-*** align
-
-*** heightmap
-
-*** intersection
-
-*** length
-
-*** merge
-
-*** move
-
-*** plant
-
-*** point
-
-*** rotate
-
-*** space
-
-*** wall
-
-*** water fill
-
-*** width
-
-*** zone completion
-
-
 * Operators to create?
 ** perlin noise
 ** vector field
