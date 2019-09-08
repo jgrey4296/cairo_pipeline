@@ -26,7 +26,6 @@ def pop_value(d, args, state):
     d.set_data({data_key: the_list})
     return (value, state)
 
-
 def cycle_value(d, args, state):
     """ Initialise a list in persistent data, then pop off it """
     key= args['key']
@@ -68,7 +67,6 @@ def value_access(d, args, state):
                 found = True
                 break
     return (vals, state)
-
 
 def value_store(d, args, state):
     """ Store a value in the data or state """

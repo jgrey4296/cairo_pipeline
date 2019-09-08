@@ -33,6 +33,23 @@ class OperatorTemplate:
 
         return self.delta
 
+    def is_oneshot(self):
+        return False
+
+    def unwind(self):
+        raise Exception("Unwind: Unimplemented")
+
+    def setup_values(self, bbox):
+        """ Get the lengths, widths and deviance values, from
+        a passed in bbox """
+        maxmin = getRanges(bbox.reshape((2,2)))
+        ranges = maxmin[:,1] - maxmin[:,0]
+        mid_ways = (ranges * 0.5).astype(int)
+        return (maxmin, ranges, mid_ways)
+
+    def __call__(self, draw=False, override=False):
+        raise Exception("Call: Unimplemented")
+
     def __enter__(self):
         """ Enters the context for op parameterization """
         return
@@ -46,21 +63,3 @@ class OperatorTemplate:
         self.dc = None
         self.i = None
         self.delta = []
-
-    def is_oneshot(self):
-        return False
-
-    def unwind(self):
-        raise Exception("Unwind: Unimplemented")
-
-    def __call__(self, draw=False, override=False):
-        raise Exception("Call: Unimplemented")
-
-
-    def setup_values(self, bbox):
-        """ Get the lengths, widths and deviance values, from
-        a passed in bbox """
-        maxmin = getRanges(bbox.reshape((2,2)))
-        ranges = maxmin[:,1] - maxmin[:,0]
-        mid_ways = (ranges * 0.5).astype(int)
-        return (maxmin, ranges, mid_ways)

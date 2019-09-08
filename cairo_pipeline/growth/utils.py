@@ -13,7 +13,6 @@ def get_node_neighbourhood(d, node, loc=None):
     assert(len(matches) == len(match_nodes))
     return match_nodes
 
-
 def filter_frontier_to_boundary(d):
     """ verify the distances of the frontier to the centre """
     logging.debug("Checking {} frontiers are at boundary".format(len(d.frontier)))
@@ -35,7 +34,6 @@ def backtrack_random(d):
         randNode.perpendicular = True
         d.frontier.append(randNode.id)
 
-
 def backtrack_from_branch(d):
     """ occasionally backtrack from a branch point: """
     if bool(d.branchPoints):
@@ -56,7 +54,6 @@ def backtrack_from_branch(d):
     if potentialNode.open() and len(d.frontier) < constants.MAX_FRONTIER_NODES:
         potentialNode.perpendicular = True
     d.frontier.append(currentNodeID)
-
 
 def determine_new_point(d, node):
     """
@@ -90,7 +87,6 @@ def determine_new_point(d, node):
                                               radMax=(node.wiggle_amnt + node.wiggle_variance))
 
     return newPoint
-
 
 def maybe_branch(d, point, focusNode):
     """ Split branch based on split chance """
@@ -126,7 +122,6 @@ def maybe_branch(d, point, focusNode):
             distance_from_branch = focusNode.distance + 1
         return (newPositions, decay, distance_from_branch)
 
-
 def positions_collide(d, positions, focusNode):
     """
     See if the positions specified are too close to any existing nodes
@@ -152,7 +147,6 @@ def positions_collide(d, positions, focusNode):
     if any([x < fNodeDist for x in distances_to_other_new_pos]):
         return True
     return False
-
 
 def get_branch_point(d, nodeID):
     """ skip down the successor chain until finding a branch """
@@ -208,7 +202,6 @@ def grow(d, node=None):
             success = True
         else:
             focusNode.attempt()
-
 
 def grow_frontier(d):
     """ Grow every node in the frontier in a single step  """

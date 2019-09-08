@@ -19,11 +19,13 @@ class PDraw:
         assert(sizeTuple is not None)
         assert(surface is not None)
         assert(isinstance(sizeTuple, tuple) and len(sizeTuple) == 2)
+
         self._ctx = ctx
         self._surface = surface
         self._size = sizeTuple
         self._center = (sizeTuple[0] * 0.5, sizeTuple[1] * 0.5)
         self._data = {}
+
         #More Complex shapes
         self._geometry = {
             'points' : np.zeros((1,utils.constants.SAMPLE_DATA_LEN)),
@@ -40,10 +42,12 @@ class PDraw:
             # [p, min_radius, max_radius, min_rads, max_rads]
             'circle' : np.zeros((1,utils.constants.CIRCLE_DATA_LEN))
         }
+
         #additional data
         self._current = np.zeros((1, utils.constants.SAMPLE_DATA_LEN))
         self._samples = np.zeros((1,utils.constants.SAMPLE_DATA_LEN))
         self._text = []
+
         #Registered crosscuts
         self._registered_crosscuts= {}
         self._crosscut_states = {
@@ -59,9 +63,11 @@ class PDraw:
         self._debug = False
 
     def data(self):
+        """ Acessor for the data of the PDraw """
         return self._data
 
     def set_data(self, data):
+        """ Setter for the data """
         self._data.update(data)
 
     def register_crosscuts(self, pairs, namespace=None, start_state=None):

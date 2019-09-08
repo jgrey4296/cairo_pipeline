@@ -1,11 +1,88 @@
-* City Generator Integration notes
-  standard pattern of operator setup,
-  with a non-deterministic operator sequence
+* Pipeline v2 Design Notes
 
-  select ->  place -> parameterize -> perform -> verify -> pool mod
-  
+  | Component            | Sub-Components                   | Notes                           |
+  |----------------------+----------------------------------+---------------------------------|
+  | Pipeline Object      |                                  | Holds other components, and     |
+  |                      |                                  | runs a pipeline description     |
+  |----------------------+----------------------------------+---------------------------------|
+  | Pipeline Description | Sub-Descriptions                 |                                 |
+  |                      | Read / Input                     |                                 |
+  |                      | Transforms                       |                                 |
+  |                      | Control + Time                   |                                 |
+  |                      | Store / Output                   |                                 |
+  |----------------------+----------------------------------+---------------------------------|
+  | Layers ￬             | See [[file:~/github/writing/orgfiles/taxonomies.org::*Taxonomy%20of%20layers%20in%20neural%20nets][neural nets]]                  | Sequential processes            |
+  |                      |                                  |                                 |
+  |----------------------+----------------------------------+---------------------------------|
+  | Agendas              |                                  | Special Transform Layer         |
+  |                      |                                  | Hot-swappable                   |
+  |----------------------+----------------------------------+---------------------------------|
+  | Crosscuts  ￫         | Shared                           | Autonomous machines             |
+  |                      | Instances                        | Treated black boxs              |
+  |                      | Lenses                           | Can be a limited landscape      |
+  |----------------------+----------------------------------+---------------------------------|
+  | State                | Ephemeral                        | Can auto-retract at time points |
+  |                      | Peristent                        |                                 |
+  |                      | Passed                           |                                 |
+  |                      | Shared                           |                                 |
+  |                      | Personal                         |                                 |
+  |----------------------+----------------------------------+---------------------------------|
+  | Parameters           | Initial                          |                                 |
+  |                      | Time Variance                    |                                 |
+  |                      | Interface                        |                                 |
+  |----------------------+----------------------------------+---------------------------------|
+  | Time                 | Rational                         | Composable Cycles of time       |
+  |                      |                                  |                                 |
+  |----------------------+----------------------------------+---------------------------------|
+  | Rules                |                                  | [[file:~/github/writing/orgfiles/taxonomies.org::*Norms][Norms]]                           |
+  |                      |                                  | Position                        |
+  |                      |                                  | Demarcation                     |
+  |                      |                                  | Decision Making                 |
+  |                      |                                  | Choice                          |
+  |                      |                                  | Information                     |
+  |                      |                                  | Payoff                          |
+  |                      |                                  | Scope                           |
+  |----------------------+----------------------------------+---------------------------------|
+  | Proportional Flows   |                                  |                                 |
+  |                      |                                  |                                 |
+  |----------------------+----------------------------------+---------------------------------|
+  | Meta                 | Meta-Heuristics                  | Search Strats                   |
+  |                      | Preference                       | Scoring                         |
+  |                      | Agreement                        | Voting                          |
+  |                      | Sequencing and Scheduling        | Ritual                          |
+  |                      | Specification and categorization |                                 |
+  |                      | Disqualifications                |                                 |
+  |                      |                                  |                                 |
 
-* Operators to create?
-** perlin noise
-** vector field
+  [[file:~/github/writing/orgfiles/taxonomies.org::*Raph%20Kosters%20Social%20Mechanics][Raph Kosters Social Mechanics]]
 
+** Designs
+*** Design 1
+
+    | Terminals    | Non-Terminals | Terminals |
+    |--------------+---------------+-----------|
+    | Observations | Inferences    | Actions   |
+    |              |               |           |
+
+    Have the non-terminals subdivide as necessary
+    Scrollable Left and right
+    Be able to lock focus layers
+    Mark and fold, or merge, layers
+    insert a value, disconnected from other layers
+    show only source layers
+    Mark as untouched
+    Rename / merge all I/O or O/I pairings
+    Placeholder names, plus tracking
+    Flow checking and amount
+    Tagging of layers / values
+    Artifacts as a separate stream? - no, always input and output terminals
+
+**** Hydra
+
+     | General           ^^| Change            ^^| Motion             ^^| Remove              ^^| Sort                         ^^|
+     |-------------------^^+-------------------^^+--------------------^^+---------------------^^+------------------------------^^|
+     | [_q_] Quit          | [_i_] Insert Rule   | [_l_] Scroll Left    | [_d_] Delete Value    | [_s_] Sort Table Alpha         |
+     | [_n_] New Table     | [_I_] Inspect Value | [_h_] Scroll Right   | [_D_] Delete Column   |                              ^^|
+     | [_v_] Set Left Tab  | [_r_] Rename Column | [_c_] Centre Column  |                     ^^|                              ^^|
+     | [_b_] Set Right Tab |                   ^^|                    ^^|                     ^^|                              ^^|
+     
