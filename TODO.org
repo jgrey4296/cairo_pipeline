@@ -1,0 +1,12 @@
+* TODOS
+** TODO Modify PDraw to hold Layers, Crosscuts, and Targets
+** TODO Have Layers Specify Inputs
+** TODO Have Inputs and Targets specify types
+** TODO Check Type Transforms
+** TODO Tag Layers
+** TODO Incorporate EL into layers
+** TODO use IO Logic for Layer Connections
+** TODO Use an API for layer spec and ordering
+** TODO Be able to specify layer agendas
+   
+
