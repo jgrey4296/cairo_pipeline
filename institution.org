@@ -1,0 +1,34 @@
+* Institution Pipeline Concept
+** Imports
+** Params
+** Components
+*** Languages
+*** Rule Layers
+*** Crosscuts
+*** Layer Agendas
+*** Carriers
+**** Activities
+**** Action Notations
+***** Instrumental
+***** Ritual / Symbolic
+***** Delegational / Division of Labour
+***** Erroneous Actions
+***** Observability
+***** Irrevocability
+***** Probability
+**** Artifacts
+**** Sanctions
+**** Values
+**** Organization Prototypes
+** Timings
+*** Layer
+*** Activity
+**** Ritual
+*** Source Sink
+** Channels
+** Mappings
+** Terminal Language
+*** Sources and Sinks
+** Institution Interface
+** Testing
+*** Situations
