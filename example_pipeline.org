@@ -1,0 +1,63 @@
+* Pipeline
+** Imports:
+   #+NAME: imports
+   #+begin_src python :results value
+
+   #+end_src
+
+** Params:
+   #+NAME: Params
+   #+begin_src python :results output
+   loopCount = 0
+   #+end_src
+
+** Components and Channels   
+*** Layer Components (LC):
+    #+begin_src pipelang :results value :p-lc
+    C = CircleGen,
+    S = Sampling,
+    Dᵢ = Displacement,
+    D = Drawing
+    #+end_src
+    # (Geom.Gen_grid, Geom.Gen_Lines, Geom.Gen_Rand,
+    # Wiggle, Displace, RotateAround, Draw,
+    # Colour.Cast, )
+
+*** CrossCuts (CC):
+    #+begin_src pipelang :results value :p-cc
+    A = Random.Normal
+    #+end_src
+    # (Random.X..., Geom.Line, Geom.Circle, Heightmap, VectorField
+    # Easing,
+
+*** Channels (CH):
+    #+begin_src pipelang  :results value :p-ch
+    A₊ = IdChannel
+    B₊ = SelectChannel
+    C₊ = FIFOChannel
+    #+end_src
+    # (FILOChannel, SplitChannelToX..., MergeChannel, SubDiv, Delay)
+
+** Time Patterns (TP):
+   #+begin_src pipelang :results value :p-tp
+   A = [[ C S | B C | D ]]
+   B = [[ Dᵢ D ]]
+   #+end_src
+
+*** End Conditions:
+    TP.A: loopCount > 10
+
+** Mappings
+*** Channel Mapping (CHM):
+    #+begin_src pipelang  :results value :p-chm
+    LC.C.A -> CH.A₊ -> LC.S.I
+    LC.S.E -> CH.B₊ -> LC.Dᵢ.I
+    LC.Dᵢ.Q -> CH.C₊ -> LC.D.I
+    #+end_src
+
+*** Crosscut Mapping (CCM):
+    #+begin_src pipelang :results value :p-ccm
+    LC.C.e -> CC.A
+    #+end_src
+
+
