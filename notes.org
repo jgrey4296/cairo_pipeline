@@ -86,3 +86,15 @@
      | [_v_] Set Left Tab  | [_r_] Rename Column | [_c_] Centre Column  |                     ^^|                              ^^|
      | [_b_] Set Right Tab |                   ^^|                    ^^|                     ^^|                              ^^|
      
+* Pipeline Org Spec Notes
+  Iterate through doc
+  parse pipelang into python
+  concatenate with initial imports and params that are python
+  wrap into pipeline object
+  run
+
+
+  add functions to verify from org
+  
+
+
